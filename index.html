@@ -146,6 +146,9 @@ ul.plain li + li { margin-top: 4px; }
 .qtext { font-weight: 500; }
 .ansrow { display: grid; grid-template-columns: 1fr auto auto; gap: 6px; margin-top: 10px; }
 .ansrow input { font: inherit; min-width: 0; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--line); background: var(--bg); color: var(--ink); min-height: 40px; }
+.oxrow { display: grid; grid-template-columns: 1fr 1fr auto; gap: 6px; margin-top: 10px; }
+.oxrow .ox { font-family: var(--display); font-size: 1.3rem; font-weight: 800; color: var(--navy); }
+.oxsec { font-family: var(--display); color: var(--gold); font-weight: 800; margin: 10px 0 0; border-top: 1px solid var(--gold); padding-top: 10px; }
 .fb { margin-top: 10px; padding: 10px 12px; border-radius: 8px; font-size: 0.92rem; }
 .fb.ok { background: var(--ok-bg); }
 .fb.bad { background: var(--bad-bg); }
@@ -183,7 +186,8 @@ ul.plain li + li { margin-top: 4px; }
 /* =====================================================================
    데이터 영역 — 문제·카드를 고칠 때는 이 아래 배열만 수정하면 됩니다.
    카드: { week, type:"movie"|"law", term, hint, answer, point, uncertain, gichul }
-   문제: { set, no, week, type, kind:"blank"|"short", q, answers[], explain, uncertain, gichul }
+   문제: { set, no, week, type, kind:"blank"|"short"|"ox", q, answers[], explain, uncertain, gichul }
+     - kind:"ox" → answers는 ["O"] 또는 ["X"], 화면에 O/X 버튼으로 나옴
      - gichul: true → 선배 족보에 나온 항목 (★ 기출 뱃지, 단어장 '기출만' 필터)
      - set 6 = 족보 키워드만 모은 '기출 세트'
      - answers 첫 번째가 화면에 보여 주는 정답, 나머지는 허용 표기
@@ -644,7 +648,44 @@ const QUESTIONS = [
   { set: 6, no: 17, week: 4, type: "movie", kind: "short", gichul: true, q: "《투 가이즈》에서 카드 외판원(이혁재)이 다니는 카드회사의 이름은?", answers: ["알지카드", "알지", "rg카드"], explain: "족보에 '카드직원 회사이름'으로 나온 키워드." },
   { set: 6, no: 18, week: 4, type: "movie", kind: "short", gichul: true, q: "《투 가이즈》 결말에서 삼합회 두목을 체포한 임 차장의 소속 기관은?", answers: ["국가안전정보국"], explain: "반도체는 국정원으로 넘어가고 두 사람은 포상금을 받는다." },
   { set: 6, no: 19, week: 4, type: "movie", kind: "short", gichul: true, q: "《투 가이즈》에서 훈이 반도체 값으로 처음 요구한 금액(원)은? (두목은 이걸 달러로 바꿔 200만 달러를 준비)", answers: ["20억", "20억원", "이십억"], explain: "족보 키워드: 10억-1억, 20억, 200만 달러." },
-  { set: 6, no: 20, week: 7, type: "law", kind: "short", gichul: true, q: "가해자를 응징하고 억제하려고 실제 손해보다 많은 배상을 명하는 제도는?", answers: ["징벌적손해배상", "징벌적손해배상제도", "punitivedamages", "징벌적배상"], explain: "고의적 불법행위·제조물책임·명예훼손·음주운전 등. 우리 판례는 대륙법계에 맞지 않는다고 본다." }
+  { set: 6, no: 20, week: 7, type: "law", kind: "short", gichul: true, q: "가해자를 응징하고 억제하려고 실제 손해보다 많은 배상을 명하는 제도는?", answers: ["징벌적손해배상", "징벌적손해배상제도", "punitivedamages", "징벌적배상"], explain: "고의적 불법행위·제조물책임·명예훼손·음주운전 등. 우리 판례는 대륙법계에 맞지 않는다고 본다." },
+  // ── O/X (세트마다 21~26번) ──
+  { set: 1, no: 21, week: 2, type: "movie", kind: "ox", q: "《데드 맨 워킹》에서 헬렌은 폰슬렛의 사형 집행까지 함께하는 영적 조언자가 된다.", answers: ["O"], explain: "폰슬렛의 부탁으로 영적 조언자가 되어 집행 장면까지 함께한다." },
+  { set: 1, no: 22, week: 3, type: "movie", kind: "ox", q: "《단지 그대가 여자라는 이유만으로》에서 정희는 사건 직후 오히려 가해 청년의 고소로 구속된다.", answers: ["O"], explain: "혀를 물린 최종민이 고소해 피해자인 정희가 구속된다." },
+  { set: 1, no: 23, week: 5, type: "movie", kind: "ox", q: "《타임 투 킬》에서 칼 리는 종신형 조건의 유죄 협상을 받아들인다.", answers: ["X"], explain: "제이크가 권했지만 칼 리는 거절하고 재판을 끝까지 간다." },
+  { set: 1, no: 24, week: 7, type: "movie", kind: "ox", q: "《에린 브로코비치》에서 에드는 사무실을 비운 에린을 해고했다가, 그녀가 찾은 자료를 보고 다시 고용한다.", answers: ["O"], explain: "다시 고용하면서 월급 인상과 복리후생도 약속한다." },
+  { set: 1, no: 25, week: 2, type: "law", kind: "ox", q: "과태료는 형법이 정한 재산형의 한 종류다.", answers: ["X"], explain: "과태료는 국가·공공단체가 부과하는 금전벌로 행정처분. 형벌인 '과료'와 구분." },
+  { set: 1, no: 26, week: 6, type: "law", kind: "ox", q: "태아는 상속에 관해서는 이미 출생한 것으로 본다.", answers: ["O"], explain: "불법행위 손해배상청구·상속·유증·인지에서 출생한 것으로 본다(개별적 보호주의)." },
+  { set: 2, no: 21, week: 4, type: "movie", kind: "ox", q: "《투 가이즈》에서 외국인은 중태가 화장실에 간 사이 킬러에게 살해된다.", answers: ["O"], explain: "중태는 비누로 킬러를 넘어뜨리고 도망친다." },
+  { set: 2, no: 22, week: 6, type: "movie", kind: "ox", q: "《아이 엠 샘》에서 이웃 애니는 외출공포증을 이기고 법정에 나와 증언한다.", answers: ["O"], explain: "하지만 상대 변호사 터너의 공격에 흔들린다." },
+  { set: 2, no: 23, week: 5, type: "movie", kind: "ox", q: "《타임 투 킬》에서 누스 판사는 재판지 변경 신청을 받아들인다.", answers: ["X"], explain: "재판지 변경을 거부해 배심원이 사실상 전원 백인이 된다." },
+  { set: 2, no: 24, week: 2, type: "movie", kind: "ox", q: "《데드 맨 워킹》에서 피해자 가족들은 헬렌이 폰슬렛을 돕는 것을 지지한다.", answers: ["X"], explain: "피해자 가족들은 '완전한 정의'(사형)를 원하며 헬렌을 비난한다." },
+  { set: 2, no: 25, week: 3, type: "law", kind: "ox", q: "판례에 따르면 싸움의 경우 원칙적으로 정당방위가 성립하지 않는다.", answers: ["O"], explain: "방위의 의사가 없다는 이유로 정당방위를 부정한다." },
+  { set: 2, no: 26, week: 7, type: "law", kind: "ox", q: "집단소송의 판결은 집단 구성원에게 유리한 경우에만 구성원 전원에게 효력이 미친다.", answers: ["X"], explain: "유리·불리를 불문하고 구성원 전원을 구속한다. 단, 제외를 요청한 사람은 빠진다." },
+  { set: 3, no: 21, week: 7, type: "movie", kind: "ox", q: "《에린 브로코비치》에서 남자친구 조지는 끝까지 에린 곁에 남아 아이들을 돌본다.", answers: ["X"], explain: "에린이 일에 매달리자 조지는 떠난다." },
+  { set: 3, no: 22, week: 5, type: "movie", kind: "ox", q: "《타임 투 킬》에서 KKK는 제이크의 집을 불태운다.", answers: ["O"], explain: "십자가 화형, 비서 부부 습격, 엘런 납치에 이어 집에 불을 지른다." },
+  { set: 3, no: 23, week: 6, type: "movie", kind: "ox", q: "《아이 엠 샘》에서 루시는 위탁 가정에서 밤마다 몰래 빠져나와 샘의 집으로 간다.", answers: ["O"], explain: "샘은 잠든 루시를 안아서 위탁 가정에 다시 데려다준다." },
+  { set: 3, no: 24, week: 4, type: "movie", kind: "ox", q: "《투 가이즈》에서 두 사람은 위치가 들통나 찜질방에서 삼합회를 피해 도망친다.", answers: ["O"], explain: "훈이 지선에게 10억 얘기를 흘린 탓에 위치가 들통난다." },
+  { set: 3, no: 25, week: 2, type: "law", kind: "ox", q: "벌금은 5만 원 이상이며 상한선이 없다.", answers: ["O"], explain: "판결 확정 후 30일 내에 완납해야 하고, 안 내면 1일 이상 3년 이하 노역장 유치." },
+  { set: 3, no: 26, week: 3, type: "law", kind: "ox", q: "강간으로 인한 수치심 때문에 피해자가 자살한 경우에도 강간치사죄가 성립한다.", answers: ["X"], explain: "사망은 강간행위로 인한 것이어야 하므로 불성립. 임신으로 분만 중 사망한 경우도 마찬가지." },
+  { set: 4, no: 21, week: 2, type: "movie", kind: "ox", q: "《데드 맨 워킹》에서 폰슬렛은 사형 집행 직전까지 끝내 범행을 부인한다.", answers: ["X"], explain: "집행 직전 월터를 죽이고 호프를 강간했다고 자백한다." },
+  { set: 4, no: 22, week: 3, type: "movie", kind: "ox", q: "《단지 그대가 여자라는 이유만으로》에서 정희의 남편은 처음부터 아내를 믿고 적극적으로 지지한다.", answers: ["X"], explain: "남편은 아내를 불신하고, 정희가 설득해 항소에 동의한다." },
+  { set: 4, no: 23, week: 6, type: "movie", kind: "ox", q: "《아이 엠 샘》에서 루시의 생모 레베카는 출산 직후 샘과 루시를 떠난다.", answers: ["O"], explain: "노숙 여성이었던 레베카는 아기를 두고 떠난다." },
+  { set: 4, no: 24, week: 7, type: "movie", kind: "ox", q: "《에린 브로코비치》에서 PG&E는 주민들에게 오염 물질이 6가 크롬이라고 사실대로 알렸다.", answers: ["X"], explain: "주민들에게는 안전한 크롬을 쓴다고 속였다." },
+  { set: 4, no: 25, week: 6, type: "law", kind: "ox", q: "피한정후견인은 원칙적으로 행위능력을 가진다.", answers: ["O"], explain: "가정법원이 정한 행위만 한정후견인의 동의가 필요하다." },
+  { set: 4, no: 26, week: 7, type: "law", kind: "ox", q: "재판상 화해의 화해조서는 확정판결과 같은 효력이 있어 강제집행할 수 있다.", answers: ["O"], explain: "민법상 화해(계약)와 달리 법관이 개입하고 화해조서를 작성한다." },
+  { set: 5, no: 21, week: 4, type: "movie", kind: "ox", q: "《투 가이즈》에서 중태는 비누를 이용해 킬러를 넘어뜨리고 도망친다.", answers: ["O"], explain: "외국인이 살해된 화장실 장면." },
+  { set: 5, no: 22, week: 5, type: "movie", kind: "ox", q: "《타임 투 킬》에서 법대생 엘런 로아크는 KKK에게 납치·폭행당한다.", answers: ["O"], explain: "제이크가 물러서지 않자 KKK가 엘런을 납치한다." },
+  { set: 5, no: 23, week: 7, type: "movie", kind: "ox", q: "에린 역의 줄리아 로버츠는 이 영화로 아카데미 여우주연상을 받았다.", answers: ["O"], explain: "골든글로브·BAFTA·SAG 여우주연상도 받았다." },
+  { set: 5, no: 24, week: 3, type: "movie", kind: "ox", q: "《단지 그대가 여자라는 이유만으로》는 대법원에서 무죄가 확정되는 장면으로 끝난다.", answers: ["X"], explain: "영화는 2심에서 무죄. 실제 변월수 사건이 대법원(1989.8.8. 89도358)까지 갔다." },
+  { set: 5, no: 25, week: 2, type: "law", kind: "ox", q: "집행유예 기간이 지나도 형 선고의 효력은 그대로 남고, 형의 집행만 면제된다.", answers: ["X"], explain: "집행유예 기간이 지나면 처음부터 형 선고의 효력이 없어진다. 3년 이하 징역·금고 선고 시 1~5년 기간으로 붙인다." },
+  { set: 5, no: 26, week: 3, type: "law", kind: "ox", q: "과잉방위는 상당성이 없으므로 원칙적으로 위법하다.", answers: ["O"], explain: "다만 21조 2항(임의적 감면), 3항(벌하지 않음)이 있다." },
+  { set: 6, no: 21, week: 3, type: "law", kind: "ox", gichul: true, q: "강간죄의 객체는 현재도 '부녀'로 한정된다.", answers: ["X"], explain: "개정으로 '사람'으로 확대되었다. 족보 키워드: 부녀 → 사람." },
+  { set: 6, no: 22, week: 3, type: "law", kind: "ox", gichul: true, q: "13세 미만의 사람도 강간죄의 객체가 될 수 있다.", answers: ["O"], explain: "사람인 이상 기혼·미혼·성년·미성년을 불문한다. 족보에 빨간색 표시." },
+  { set: 6, no: 23, week: 3, type: "law", kind: "ox", gichul: true, q: "위법성조각사유에는 정당행위·정당방위·긴급피난·자구행위·피해자의 승낙이 있다.", answers: ["O"], explain: "구성요건에 해당해도 위법성조각사유가 있으면 범죄가 성립하지 않는다." },
+  { set: 6, no: 24, week: 4, type: "movie", kind: "ox", gichul: true, q: "《투 가이즈》에서 반도체가 든 가방은 원래 살해된 외국인 산업스파이의 것이었다.", answers: ["O"], explain: "족보 키워드: 반도체 가방." },
+  { set: 6, no: 25, week: 6, type: "law", kind: "ox", gichul: true, q: "미성년자의 법정대리인 1순위는 미성년후견인이다.", answers: ["X"], explain: "1순위는 친권자, 2순위가 미성년후견인." },
+  { set: 6, no: 26, week: 2, type: "law", kind: "ox", gichul: true, q: "선고유예는 형을 선고하되 형의 '집행'만 미루는 제도다.", answers: ["X"], explain: "그것은 집행유예. 선고유예는 형의 '선고' 자체를 미룬다." }
 ];
 
 /* 줄거리: 영화별 기본 정보 · 등장인물 · 장면 순서 · 실화 차이 · 수업 포인트 */
@@ -811,7 +852,7 @@ function renderHome() {
     <div class="panel weeks">${weeks}</div>
     <h2>모의고사 최고 점수</h2>
     <div class="sets">${sets}</div>
-    <p class="note" style="margin-top:18px">시험은 30분이지만 실제로는 18분 안에 풀 수 있는 분량이라고 해요. 모의고사는 세트당 20문항(빈칸·단답)이고 목표는 18분이에요.<br>진도와 점수는 이 기기의 브라우저에만 저장돼요.</p>
+    <p class="note" style="margin-top:18px">시험은 30분이지만 실제로는 18분 안에 풀 수 있는 분량이라고 해요. 모의고사는 세트당 26문항(빈칸·단답 20 + O/X 6)이고 목표는 18분이에요.<br>진도와 점수는 이 기기의 브라우저에만 저장돼요.</p>
     <h2>시험 범위</h2>
     <div class="panel"><ul class="plain">${Object.keys(WEEKS).map(w => `<li><b>${w}주차</b> 《${esc(WEEKS[w].title)}》(${WEEKS[w].year}) — ${[2, 3, 6, 7].includes(+w) ? "영화 + 강의자료" : "영화만"}</li>`).join("")}</ul></div>`;
   $("#goWrong").onclick = () => { ui.cards.kind = "wrong"; ui.cards.i = 0; ui.cards.order = null; go("cards"); };
@@ -958,10 +999,12 @@ function renderExam() {
   const done = all.filter(q => e.res[qId(q)]).length;
   const correct = all.filter(q => e.res[qId(q)] && e.res[qId(q)].ok).length;
   const mv = all.filter(q => q.type === "movie").length;
+  const oxN = all.filter(q => q.kind === "ox").length;
+  const firstOx = qs.find(q => q.kind === "ox");
   view.innerHTML = `
     <h2>모의고사</h2>
     <div class="seg" style="max-width:100%">${setBtns}</div>
-    <p class="small muted" style="margin:8px 0 12px">${e.set === 6 ? "선배 족보에 나온 키워드만 모은 세트예요. 1–5세트와 겹치지 않아요. " : ""}${all.length}문항 · 영화 ${mv} / 법 ${all.length - mv} · 빈칸·단답형. 답을 쓰고 Enter 또는 '확인'. '정답 보기'는 틀린 것으로 기록돼요.</p>
+    <p class="small muted" style="margin:8px 0 12px">${e.set === 6 ? "선배 족보에 나온 키워드만 모은 세트예요. 1–5세트와 겹치지 않아요. " : ""}${all.length}문항 · 영화 ${mv} / 법 ${all.length - mv} · 빈칸·단답 ${all.length - oxN} + O/X ${oxN}. 답을 쓰고 Enter 또는 '확인', O/X는 버튼을 누르면 바로 채점돼요. '정답 보기'는 틀린 것으로 기록돼요.</p>
     <div class="timer">
       <span class="clock ${e.sec <= 720 ? "late" : ""}" id="clock" aria-live="off">${fmt(e.sec)}</span>
       <div class="row">
@@ -971,7 +1014,7 @@ function renderExam() {
       <div class="goal">시험 시간 30분 · 실제 분량 기준 목표 18분 (남은 12:00이 되면 금색)</div>
     </div>
     ${e.retry ? `<p class="note" style="margin-top:12px">틀린 문제만 다시 푸는 중이에요 (${qs.length}문항).</p>` : ""}
-    <div class="qs">${qs.map(q => qHtml(q)).join("")}</div>
+    <div class="qs">${qs.map(q => (q === firstOx ? '<div class="oxsec">O / X</div>' : "") + qHtml(q)).join("")}</div>
     <div class="panel score">
       <div class="big">${correct} / ${all.length}</div>
       <div class="small muted">푼 문제 ${done} · 최고 점수 ${S.best[e.set] ?? "–"}</div>
@@ -994,7 +1037,10 @@ function renderExamTimerBtn() { const b = $("#tStart"); if (b) b.textContent = u
 
 function qHtml(q) {
   const id = qId(q), r = ui.exam.res[id];
-  const kindLabel = q.kind === "blank" ? "빈칸" : "단답";
+  const kindLabel = q.kind === "blank" ? "빈칸" : q.kind === "ox" ? "O/X" : "단답";
+  const inputHtml = q.kind === "ox"
+    ? `<div class="oxrow" data-q="${id}"><button class="btn ox" type="button" data-ox="O" aria-label="${q.no}번 O">O</button><button class="btn ox" type="button" data-ox="X" aria-label="${q.no}번 X">X</button><button class="btn" type="button" data-reveal="${id}">정답 보기</button></div>`
+    : `<form class="ansrow" data-q="${id}"><input id="in-${id}" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="${q.kind === "blank" ? "빈칸에 들어갈 말" : "답 입력"}" aria-label="${q.no}번 답"><button class="btn primary" type="submit">확인</button><button class="btn" type="button" data-reveal="${id}">정답 보기</button></form>`;
   let fb = "";
   if (r) {
     fb = r.ok
@@ -1004,12 +1050,19 @@ function qHtml(q) {
   return `<div class="qcard ${r ? (r.ok ? "ok" : "bad") : ""}" id="c-${id}">
     <div class="qhead"><span class="qno">${String(q.no).padStart(2, "0")}</span><span class="tag wk">${weekLabel(q.week)}</span>${typeTag(q.type)}<span class="tag wk">${kindLabel}</span>${gichulTag(q.gichul)}${warnTag(q.uncertain)}</div>
     <div class="qtext">${esc(q.q)}</div>
-    ${r ? "" : `<form class="ansrow" data-q="${id}"><input id="in-${id}" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="${q.kind === "blank" ? "빈칸에 들어갈 말" : "답 입력"}" aria-label="${q.no}번 답"><button class="btn primary" type="submit">확인</button><button class="btn" type="button" data-reveal="${id}">정답 보기</button></form>`}
+    ${r ? "" : inputHtml}
     ${fb}
   </div>`;
 }
 function bindQ(q) {
   const id = qId(q);
+  if (q.kind === "ox") {
+    const row = view.querySelector(`.oxrow[data-q="${id}"]`);
+    if (!row) return;
+    row.querySelectorAll("[data-ox]").forEach(b => b.onclick = () => { setScore(q, grade(q, b.dataset.ox), b.dataset.ox, false); refreshQ(q); });
+    row.querySelector("[data-reveal]").onclick = () => { setScore(q, false, "", true); refreshQ(q); };
+    return;
+  }
   const form = view.querySelector(`form[data-q="${id}"]`);
   if (!form) return;
   form.addEventListener("submit", ev => {
