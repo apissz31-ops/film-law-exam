@@ -80,6 +80,9 @@ button.btn.on { background: var(--gold-soft); border-color: var(--gold); color: 
 .tag.law { background: var(--law-bg); color: var(--law); }
 .tag.wk { background: var(--navy-soft); color: var(--navy); }
 .tag.warn { background: var(--warn-bg); color: var(--warn); }
+.tag.gichul { background: var(--gold-soft); color: var(--gold); box-shadow: inset 0 0 0 1px var(--gold); }
+.tips { margin: 0; padding-left: 1.2em; }
+.tips li + li { margin-top: 4px; }
 .bar { height: 8px; background: var(--navy-soft); border-radius: 999px; overflow: hidden; }
 .bar > i { display: block; height: 100%; background: var(--gold); width: 0; transition: width .3s; }
 /* home */
@@ -93,7 +96,7 @@ button.btn.on { background: var(--gold-soft); border-color: var(--gold); color: 
 .stat { background: var(--paper); border: 1px solid var(--line); border-radius: 10px; padding: 12px; }
 .stat .v { font-family: var(--mono); font-size: 1.4rem; color: var(--navy); font-variant-numeric: tabular-nums; }
 .stat .k { font-size: 0.78rem; color: var(--muted); }
-.sets { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
+.sets { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; }
 .sets .stat { text-align: center; padding: 10px 4px; }
 /* cards */
 .flip { display: block; width: 100%; text-align: left; font: inherit; color: var(--ink); background: var(--paper); border: 1px solid var(--line); border-top: 4px solid var(--gold); border-radius: 12px; padding: 22px 18px; min-height: 230px; cursor: pointer; }
@@ -155,7 +158,8 @@ ul.plain li + li { margin-top: 4px; }
   .ansrow { grid-template-columns: 1fr 1fr; }
   .ansrow input { grid-column: 1 / -1; }
   .stats { grid-template-columns: repeat(3, 1fr); }
-  .sets { grid-template-columns: repeat(5, 1fr); gap: 6px; }
+  .sets { grid-template-columns: repeat(6, 1fr); gap: 4px; }
+  .sets .stat .v { font-size: 1.15rem; }
 }
 @media (prefers-reduced-motion: reduce) { .bar > i { transition: none; } }
 </style>
@@ -178,8 +182,10 @@ ul.plain li + li { margin-top: 4px; }
 <script>
 /* =====================================================================
    데이터 영역 — 문제·카드를 고칠 때는 이 아래 배열만 수정하면 됩니다.
-   카드: { week, type:"movie"|"law", term, hint, answer, point, uncertain }
-   문제: { set, no, week, type, kind:"blank"|"short", q, answers[], explain, uncertain }
+   카드: { week, type:"movie"|"law", term, hint, answer, point, uncertain, gichul }
+   문제: { set, no, week, type, kind:"blank"|"short", q, answers[], explain, uncertain, gichul }
+     - gichul: true → 선배 족보에 나온 항목 (★ 기출 뱃지, 단어장 '기출만' 필터)
+     - set 6 = 족보 키워드만 모은 '기출 세트'
      - answers 첫 번째가 화면에 보여 주는 정답, 나머지는 허용 표기
      - 채점은 공백·대소문자·구두점·기호를 무시하고 비교
    ===================================================================== */
@@ -196,9 +202,9 @@ const WEEKS = {
 const CARDS = [
   // ───────── 2주차 데드 맨 워킹 · 영화 ─────────
   { week: 2, type: "movie", term: "감독", answer: "팀 로빈스 (Tim Robbins)", point: "원작은 헬렌 프레진 수녀의 논픽션 『데드 맨 워킹』(1993)." },
-  { week: 2, type: "movie", term: "헬렌 프레진의 신분", answer: "수녀 (Sister Helen Prejean)", point: "배우 수전 서랜든. 이 역으로 아카데미 여우주연상 수상." },
+  { week: 2, type: "movie", term: "헬렌 프레진의 신분", gichul: true, answer: "수녀 (Sister Helen Prejean)", point: "배우 수전 서랜든. 이 역으로 아카데미 여우주연상 수상." },
   { week: 2, type: "movie", term: "헬렌이 일하는 곳", answer: "호프 하우스 (Hope House)", point: "뉴올리언스의 흑인 빈민가(세인트토머스 프로젝트)." },
-  { week: 2, type: "movie", term: "사형수 매튜 폰슬렛 역 배우", answer: "숀 펜", point: "숀 펜은 베를린영화제 은곰상(남우주연상)을 받았다." },
+  { week: 2, type: "movie", term: "사형수 매튜 폰슬렛 역 배우", gichul: true, answer: "숀 펜", point: "숀 펜은 베를린영화제 은곰상(남우주연상)을 받았다." },
   { week: 2, type: "movie", term: "폰슬렛이 수감된 교도소", answer: "루이지애나 주립교도소 (앙골라)", point: "배경은 루이지애나주." },
   { week: 2, type: "movie", term: "폰슬렛이 사형수 감방에 있던 기간", answer: "6년", point: "영화가 시작될 때 기준." },
   { week: 2, type: "movie", term: "폰슬렛의 죄목", answer: "10대 커플 납치·강간·살인", point: "피해자는 월터 델라크루아와 호프 퍼시." },
@@ -212,8 +218,8 @@ const CARDS = [
   { week: 2, type: "movie", term: "폰슬렛의 어머니 이름", answer: "루실 (Lucille)", point: "청문회에 아들 크레이그와 함께 나옴. 형제는 크레이그·소니·트로이." },
   { week: 2, type: "movie", term: "폰슬렛이 TV 인터뷰에서 칭찬한 인물", answer: "히틀러", point: "\"지도자\"라고 칭찬 → 헬렌이 '사람들이 당신을 죽이기 쉬워진다'고 꾸짖음." },
   { week: 2, type: "movie", term: "거짓말탐지기 검사 결과", answer: "판정 불가 (inconclusive)", point: "스트레스 반응 때문에 결론이 나지 않음." },
-  { week: 2, type: "movie", term: "영화 속 사형 집행 방식", answer: "약물주사 (lethal injection)", point: "실제 모델 사건은 전기의자로 집행됨." },
-  { week: 2, type: "movie", term: "집행 직전 폰슬렛의 자백 내용", answer: "월터는 자기가 죽이고 호프를 강간함. 호프는 비텔로가 죽임", point: "끝까지 비텔로 탓을 하다가 마지막에 책임을 인정." },
+  { week: 2, type: "movie", term: "영화 속 사형 집행 방식", gichul: true, answer: "약물주사 (lethal injection)", point: "실제 모델 사건은 전기의자로 집행됨." },
+  { week: 2, type: "movie", term: "집행 직전 폰슬렛의 자백 내용", gichul: true, answer: "월터는 자기가 죽이고 호프를 강간함. 호프는 비텔로가 죽임", point: "끝까지 비텔로 탓을 하다가 마지막에 책임을 인정." },
   { week: 2, type: "movie", term: "헬렌이 마지막에 해 준 말 (요지)", answer: "마지막으로 보는 얼굴이 '사랑의 얼굴'이 되겠다", point: "집행 때 헬렌을 바라보라는 뜻." },
   { week: 2, type: "movie", term: "폰슬렛의 마지막 발언 (요지)", answer: "월터 아버지에게 사과, 퍼시 부부에게 '내 죽음이 위안이 되길', '누가 하든 살인은 잘못'", point: "국가의 사형도 살인이라는 메시지." },
   { week: 2, type: "movie", term: "집행 장면의 편집 방식", answer: "범행 장면과 교차편집", point: "사형과 살인을 나란히 보여 줌." },
@@ -240,8 +246,8 @@ const CARDS = [
   { week: 2, type: "law", term: "몰수 대상 3가지", answer: "① 범죄에 제공한 물건(흉기) ② 범죄로 생기거나 얻은 물건(도박으로 딴 돈) ③ 그 대가(장물 판 돈)", point: "범죄 이득을 막기 위한 형벌." },
   { week: 2, type: "law", term: "자격상실이 따르는 판결", answer: "사형 · 무기징역 · 무기금고", point: "공무원 자격, 선거권·피선거권 등이 당연히 상실." },
   { week: 2, type: "law", term: "자격정지 기간", answer: "1년 이상 15년 이하", point: "일정 기간 자격을 정지." },
-  { week: 2, type: "law", term: "집행유예 요건과 기간", answer: "3년 이하 징역·금고 선고 시, 1년~5년 유예", point: "기간이 지나면 형 선고의 효력이 없어짐." },
-  { week: 2, type: "law", term: "선고유예 요건과 효과", answer: "1년 이하 징역·금고·자격정지·벌금 → 2년 지나면 면소 간주", point: "형의 '선고' 자체를 미룸 (집행유예는 '집행'만 미룸)." },
+  { week: 2, type: "law", term: "집행유예 요건과 기간", gichul: true, answer: "3년 이하 징역·금고 선고 시, 1년~5년 유예", point: "기간이 지나면 형 선고의 효력이 없어짐." },
+  { week: 2, type: "law", term: "선고유예 요건과 효과", gichul: true, answer: "1년 이하 징역·금고·자격정지·벌금 → 2년 지나면 면소 간주", point: "형의 '선고' 자체를 미룸 (집행유예는 '집행'만 미룸)." },
   { week: 2, type: "law", term: "가석방 요건", answer: "무기형 20년, 유기형 형기의 1/3 경과 + 행상 양호", point: "취소되지 않으면 형 집행 종료와 같은 효력." },
   { week: 2, type: "law", term: "전과기록을 다루는 법률", answer: "「형의 실효 등에 관한 법률」", point: "수형인명부 · 수형인명표 · 범죄경력자료." },
   { week: 2, type: "law", term: "수형인명부 vs 수형인명표 관리 기관", answer: "명부: 검찰청·군검찰부 / 명표: 등록기준지 시·구·읍·면사무소", point: "둘 다 자격정지 이상의 형을 기록." },
@@ -258,7 +264,7 @@ const CARDS = [
   { week: 3, type: "movie", term: "주인공 정희 역 배우", answer: "원미경", point: "청룡영화상 여우주연상 수상." },
   { week: 3, type: "movie", term: "정희의 신분", answer: "가정주부", point: "밤늦게 귀가하다 사건을 당함." },
   { week: 3, type: "movie", term: "가해자의 수", answer: "청년 2명", point: "2인 이상 합동 = 특수강간 유형." },
-  { week: 3, type: "movie", term: "정희가 저항하며 한 행동", answer: "가해 청년의 혀를 깨묾", point: "실제 사건에서도 혀가 절단됨." },
+  { week: 3, type: "movie", term: "정희가 저항하며 한 행동", gichul: true, answer: "가해 청년의 혀를 깨묾", point: "실제 사건에서도 혀가 절단됨." },
   { week: 3, type: "movie", term: "혀를 물린 청년의 이름과 배우", answer: "최종민 · 김민종", point: "오히려 정희를 고소." },
   { week: 3, type: "movie", term: "사건 직후 정희에게 일어난 일", answer: "가해자의 고소로 정희가 구속됨", point: "피해자가 피고인이 되는 역전." },
   { week: 3, type: "movie", term: "1심 결과", answer: "유죄, 집행유예로 석방", point: "법정에서 성적·인격적 모욕을 당함." },
@@ -267,30 +273,30 @@ const CARDS = [
   { week: 3, type: "movie", term: "가해자 측 변호사 역 배우", answer: "이경영", point: "법정에서 정희를 몰아붙임." },
   { week: 3, type: "movie", term: "재판 중 정희가 한 극단적 선택", answer: "자살 기도 (구조됨)", point: "과거가 드러나 남편과 멀어진 뒤. 과거의 구체적 내용은 확인 안 됨." },
   { week: 3, type: "movie", term: "무죄의 결정적 계기", answer: "현장에 있던 시누이(진희진)의 위증 번복 증언", point: "시누이 = 남편의 여동생." },
-  { week: 3, type: "movie", term: "영화 속 최종 판결", answer: "원심 파기, 무죄 (2심)", point: "실제 사건은 대법원에서 무죄 확정." },
+  { week: 3, type: "movie", term: "영화 속 최종 판결", gichul: true, answer: "원심 파기, 무죄 (2심)", point: "실제 사건은 대법원에서 무죄 확정." },
   { week: 3, type: "movie", term: "실제 모델 사건", answer: "변월수 사건 (1988년 9월 10일 새벽)", point: "30대 가정주부가 강제로 입맞춤하려던 남성의 혀를 깨물어 절단." },
   { week: 3, type: "movie", term: "실제 사건 1심 형량", answer: "징역 6월, 집행유예 1년 (폭력행위처벌법 위반)", point: "근거: 가해자들이 흉기가 없어 공포를 느낄 상황이 아니었다. 출처 1곳.", uncertain: true },
   { week: 3, type: "movie", term: "실제 사건 대법원 판결", answer: "대판 1989.8.8. 89도358 — 정당방위, 무죄", point: "여성 정당방위 판례의 시발점." },
   { week: 3, type: "movie", term: "실제 사건이 일어난 장소", answer: "출처마다 다름 (서울 골목 / 경북 지역)", point: "확인되지 않아 출제하지 않음.", uncertain: true },
 
   // ───────── 3주차 · 법(강의자료) ─────────
-  { week: 3, type: "law", term: "죄형법정주의의 격언", answer: "법률 없으면 범죄 없고, 법률 없으면 형벌 없다", point: "형법상 가장 중요한 원칙." },
+  { week: 3, type: "law", term: "죄형법정주의의 격언", gichul: true, answer: "법률 없으면 범죄 없고, 법률 없으면 형벌 없다", point: "형법상 가장 중요한 원칙." },
   { week: 3, type: "law", term: "죄형법정주의의 근거 조문", answer: "헌법 12조 · 13조, 형법 1조", point: "법치국가 원리에서 파생." },
   { week: 3, type: "law", term: "헌법 13조 1항의 내용", answer: "행위시 법률에 의하지 않으면 소추 금지 + 이중처벌 금지", point: "" },
   { week: 3, type: "law", term: "형법 1조 2항", answer: "범죄 후 법이 바뀌어 범죄가 안 되거나 가벼워지면 신법 적용", point: "피고인에게 유리한 소급은 허용." },
-  { week: 3, type: "law", term: "죄형법정주의 파생원칙 5가지", answer: "성문법률주의 · 소급효금지 · 명확성 · 유추적용금지 · 적정성", point: "성문법률주의 = 관습형법금지의 원칙." },
-  { week: 3, type: "law", term: "유추적용금지의 예시", answer: "창밖에서 창문 속을 들여다본 것을 주거침입으로 보는 것", point: "주거침입죄: 3년 이하 징역 또는 500만 원 이하 벌금." },
-  { week: 3, type: "law", term: "범죄 성립요건 3단계", answer: "구성요건해당성 → 위법성 → 책임성", point: "살인 250조 1항, 절도 327조가 구성요건 예시." },
-  { week: 3, type: "law", term: "위법성조각사유 5가지", answer: "정당행위 · 정당방위 · 긴급피난 · 자구행위 · 피해자의 승낙", point: "정당행위는 형법 20조 (예: 전쟁 중 군인)." },
-  { week: 3, type: "law", term: "책임배제사유", answer: "형사미성년자 · 심신상실자 · 농아자 · 정당한 이유 있는 금지착오", point: "" },
-  { week: 3, type: "law", term: "책임조각사유(형 감경·면제)", answer: "과잉방위 · 과잉피난 · 과잉자구행위 · 강요된 행위", point: "" },
+  { week: 3, type: "law", term: "죄형법정주의 파생원칙 5가지", gichul: true, answer: "성문법률주의 · 소급효금지 · 명확성 · 유추적용금지 · 적정성", point: "성문법률주의 = 관습형법금지의 원칙." },
+  { week: 3, type: "law", term: "유추적용금지의 예시", gichul: true, answer: "창밖에서 창문 속을 들여다본 것을 주거침입으로 보는 것", point: "주거침입죄: 3년 이하 징역 또는 500만 원 이하 벌금." },
+  { week: 3, type: "law", term: "범죄 성립요건 3단계", gichul: true, answer: "구성요건해당성 → 위법성 → 책임성", point: "살인 250조 1항, 절도 327조가 구성요건 예시." },
+  { week: 3, type: "law", term: "위법성조각사유 5가지", gichul: true, answer: "정당행위 · 정당방위 · 긴급피난 · 자구행위 · 피해자의 승낙", point: "정당행위는 형법 20조 (예: 전쟁 중 군인)." },
+  { week: 3, type: "law", term: "책임배제사유", gichul: true, answer: "형사미성년자 · 심신상실자 · 농아자 · 정당한 이유 있는 금지착오", point: "" },
+  { week: 3, type: "law", term: "책임조각사유(형 감경·면제)", gichul: true, answer: "과잉방위 · 과잉피난 · 과잉자구행위 · 강요된 행위", point: "" },
   { week: 3, type: "law", term: "강간죄의 보호법익", answer: "사람의 성적자기결정의 자유", point: "강제추행도 성적자기결정권." },
-  { week: 3, type: "law", term: "강간죄의 객체 변화", answer: "'부녀' → '사람'", point: "기혼·미혼·성년·미성년 불문, 13세 미만도 객체." },
+  { week: 3, type: "law", term: "강간죄의 객체 변화", gichul: true, answer: "'부녀' → '사람'", point: "기혼·미혼·성년·미성년 불문, 13세 미만도 객체." },
   { week: 3, type: "law", term: "부부강간을 인정한 판례", answer: "대판(전) 2013.5.16. 2012도14788", point: "그전 다수설·판례는 부정." },
   { week: 3, type: "law", term: "강간죄 폭행·협박의 정도", answer: "반항을 불가능하게 하거나 현저히 곤란하게 하는 정도", point: "폭행은 사람에게 직접, 협박은 제3자 대상도 가능." },
-  { week: 3, type: "law", term: "강간죄의 실행 착수와 기수 시점", answer: "착수: 폭행·협박 개시 / 기수: 삽입하는 순간", point: "사정·성욕 만족 불필요." },
-  { week: 3, type: "law", term: "강간죄는 친고죄인가?", answer: "아니다. 친고죄 규정이 삭제되어 비친고죄", point: "강제추행 등도 함께 비친고죄로." },
-  { week: 3, type: "law", term: "강간죄 법정형", answer: "3년 이상의 유기징역", point: "" },
+  { week: 3, type: "law", term: "강간죄의 실행 착수와 기수 시점", gichul: true, answer: "착수: 폭행·협박 개시 / 기수: 삽입하는 순간", point: "사정·성욕 만족 불필요." },
+  { week: 3, type: "law", term: "강간죄는 친고죄인가?", gichul: true, answer: "아니다. 친고죄 규정이 삭제되어 비친고죄", point: "강제추행 등도 함께 비친고죄로." },
+  { week: 3, type: "law", term: "강간죄 법정형", gichul: true, answer: "3년 이상의 유기징역", point: "" },
   { week: 3, type: "law", term: "특수강간죄 (흉기 휴대 또는 2인 이상 합동)", answer: "무기 또는 5년 이상 징역", point: "성폭력처벌법." },
   { week: 3, type: "law", term: "특수강도범이 강간한 경우", answer: "사형, 무기 또는 10년 이상 징역", point: "주거침입범 등이 강간하면 무기 또는 5년 이상." },
   { week: 3, type: "law", term: "준강간의 '심신상실'과 '항거불능' 예", answer: "심신상실: 수면·탈진·무의식 / 항거불능: 치료 가장, 포박 상태", point: "강간죄의 예에 따라 처벌." },
@@ -312,27 +318,27 @@ const CARDS = [
 
   // ───────── 4주차 투 가이즈 · 영화 ─────────
   { week: 4, type: "movie", term: "감독 / 개봉", answer: "박헌수 / 2004년 7월 9일", point: "116분, 관객 약 93만 명." },
-  { week: 4, type: "movie", term: "김훈 역 배우와 직업", answer: "차태현 · 대리운전·발레파킹 기사", point: "카드깡과 낭비벽으로 빚더미." },
-  { week: 4, type: "movie", term: "박중태 역 배우와 정체", answer: "박중훈 · 사채업자 밑의 해결사", point: "빚 받아내는 사람." },
+  { week: 4, type: "movie", term: "김훈 역 배우와 직업", gichul: true, answer: "차태현 · 대리운전·발레파킹 기사", point: "카드깡과 낭비벽으로 빚더미." },
+  { week: 4, type: "movie", term: "박중태 역 배우와 정체", gichul: true, answer: "박중훈 · 사채업자 밑의 해결사", point: "빚 받아내는 사람." },
   { week: 4, type: "movie", term: "중태를 고용한 사채업자", answer: "박용식 (지대한)", point: "김훈을 잡아 오면 보수의 1/3을 주겠다고 함." },
   { week: 4, type: "movie", term: "중태가 사채업자에게 가져온 것", answer: "강아지", point: "영화 첫 장면." },
   { week: 4, type: "movie", term: "김훈이 떼먹은 액수", answer: "500만 원으로 적힌 출처가 있으나 출처 안에서도 엇갈림", point: "출제하지 않음.", uncertain: true },
   { week: 4, type: "movie", term: "김훈이 카드사 독촉을 막는 방법", answer: "집에 설치한 '방범장치'", point: "" },
   { week: 4, type: "movie", term: "중태가 훈을 부르는 별명", answer: "콩팥", point: "장기를 팔겠다는 협박조." },
-  { week: 4, type: "movie", term: "중태가 훈에게 먹인 'GPS'의 정체", answer: "흰 바둑돌", point: "도망쳐도 찾는다는 거짓 협박." },
+  { week: 4, type: "movie", term: "중태가 훈에게 먹인 'GPS'의 정체", gichul: true, answer: "흰 바둑돌", point: "도망쳐도 찾는다는 거짓 협박." },
   { week: 4, type: "movie", term: "대리운전 손님 외국인의 정체", answer: "산업스파이 (토니 맥과이어)", point: "반도체를 빼돌리려다 살해됨." },
   { week: 4, type: "movie", term: "중태가 킬러를 넘어뜨린 도구", answer: "비누", point: "화장실에서 도주." },
-  { week: 4, type: "movie", term: "외국인 가방 속 물건", answer: "국내에서 개발된 최첨단 반도체", point: "" },
-  { week: 4, type: "movie", term: "반도체를 노리는 범죄조직", answer: "삼합회", point: "두목 '올백'(정흥채), 킬러 린 하이펑(김구택)." },
+  { week: 4, type: "movie", term: "외국인 가방 속 물건", gichul: true, answer: "국내에서 개발된 최첨단 반도체", point: "" },
+  { week: 4, type: "movie", term: "반도체를 노리는 범죄조직", gichul: true, answer: "삼합회", point: "두목 '올백'(정흥채), 킬러 린 하이펑(김구택)." },
   { week: 4, type: "movie", term: "훈이 삼합회에게 당한 고문", answer: "물고문", point: "GPS를 빼내려다 붙잡힘." },
-  { week: 4, type: "movie", term: "'큰 거 한 장'을 두목이 이해한 금액", answer: "10억", point: "오해에서 협상이 커짐." },
+  { week: 4, type: "movie", term: "'큰 거 한 장'을 두목이 이해한 금액", gichul: true, answer: "10억", point: "오해에서 협상이 커짐." },
   { week: 4, type: "movie", term: "위치가 들통나 도망친 장소", answer: "찜질방", point: "훈이 지선에게 10억 얘기를 흘려서." },
   { week: 4, type: "movie", term: "옥상에서 탈출할 때 잡은 것", answer: "소방호스", point: "호스가 짧아 헬스장 앞에서 멈춤." },
   { week: 4, type: "movie", term: "지선의 정체", answer: "중태의 지인, 천재 도둑 (한다감)", point: "당시 예명 한은정." },
-  { week: 4, type: "movie", term: "훈이 요구한 금액 → 두목이 준비한 금액", answer: "20억을 달러로 → 200만 달러", point: "" },
+  { week: 4, type: "movie", term: "훈이 요구한 금액 → 두목이 준비한 금액", gichul: true, answer: "20억을 달러로 → 200만 달러", point: "" },
   { week: 4, type: "movie", term: "삼합회를 뺑뺑이 돌린 장소 중 하나", answer: "목동 아이스링크", point: "장소를 계속 바꿈." },
   { week: 4, type: "movie", term: "가방을 바꿔치기한 곳", answer: "공항역 물품보관함", point: "지선이 미리 개조. 실제 촬영은 광주 상무역." },
-  { week: 4, type: "movie", term: "두목을 체포한 인물", answer: "국가안전정보국 임 차장 (손현주)", point: "권총 '똥침'으로 체포." },
+  { week: 4, type: "movie", term: "두목을 체포한 인물", gichul: true, answer: "국가안전정보국 임 차장 (손현주)", point: "권총 '똥침'으로 체포." },
   { week: 4, type: "movie", term: "결말", answer: "반도체는 국정원으로, 두 사람은 포상금", point: "" },
   { week: 4, type: "movie", term: "영화와 연결되는 법 주제 (추정)", answer: "카드깡·사채·불법 채권추심", point: "강의자료가 없어 수업에서 다룬 내용은 확인 안 됨.", uncertain: true },
 
@@ -371,8 +377,8 @@ const CARDS = [
   // ───────── 6주차 아이 엠 샘 · 영화 ─────────
   { week: 6, type: "movie", term: "감독", answer: "제시 넬슨", point: "한국 개봉 2002.10.18." },
   { week: 6, type: "movie", term: "샘 도슨 역 배우와 정신연령", answer: "숀 펜 · 약 7세", point: "숀 펜은 아카데미 남우주연상 후보." },
-  { week: 6, type: "movie", term: "샘의 직장", answer: "스타벅스", point: "" },
-  { week: 6, type: "movie", term: "딸의 이름과 유래", answer: "루시 다이아몬드 도슨 — 비틀스 「Lucy in the Sky with Diamonds」", point: "OST는 전부 비틀스 리메이크." },
+  { week: 6, type: "movie", term: "샘의 직장", gichul: true, answer: "스타벅스", point: "" },
+  { week: 6, type: "movie", term: "딸의 이름과 유래", gichul: true, answer: "루시 다이아몬드 도슨 — 비틀스 「Lucy in the Sky with Diamonds」", point: "OST는 전부 비틀스 리메이크." },
   { week: 6, type: "movie", term: "루시 역 배우", answer: "다코타 패닝 (어린 시절 엘르 패닝)", point: "방송비평가협회 아역상." },
   { week: 6, type: "movie", term: "루시의 생모", answer: "노숙 여성 레베카 — 출산 직후 떠남", point: "" },
   { week: 6, type: "movie", term: "이웃 애니의 병과 특기", answer: "광장공포증(외출공포증), 피아노", point: "배우 다이앤 위스트. 루시를 돌봐 줌." },
@@ -384,7 +390,7 @@ const CARDS = [
   { week: 6, type: "movie", term: "샘이 경찰에 붙잡힌 일", answer: "성매매 여성을 따라갔다가 성매매 혐의로 체포", point: "오해에서 비롯됨." },
   { week: 6, type: "movie", term: "루시가 아빠와 떨어지게 된 장면", answer: "7번째 생일 파티 사건 뒤 아동복지국이 데려감", point: "샘이 다른 아이를 잘못 다뤄 그 아이 아버지가 문제 삼음." },
   { week: 6, type: "movie", term: "변호사 리타 해리슨 역 배우", answer: "미셸 파이퍼", point: "일에 빠져 아들 윌리를 소홀히 함." },
-  { week: 6, type: "movie", term: "리타가 사건을 맡은 방식과 이유", answer: "무료(프로보노) — 동료들 앞에서 체면 때문에", point: "처음엔 바쁘다며 피함." },
+  { week: 6, type: "movie", term: "리타가 사건을 맡은 방식과 이유", gichul: true, answer: "무료(프로보노) — 동료들 앞에서 체면 때문에", point: "처음엔 바쁘다며 피함." },
   { week: 6, type: "movie", term: "상대 측 변호사", answer: "터너 (리처드 시프)", point: "샘을 몰아붙임." },
   { week: 6, type: "movie", term: "사회복지사", answer: "마거릿 캘그로브 (로레타 디바인)", point: "이별 장면에서 루시를 떼어 놓음." },
   { week: 6, type: "movie", term: "판사 이름", answer: "필립 맥닐리 (켄 젠킨스)", point: "" },
@@ -400,7 +406,7 @@ const CARDS = [
   { week: 6, type: "movie", term: "영화가 다루는 법 쟁점", answer: "지적장애 부모의 양육권(친권) vs 아동의 복리", point: "" },
 
   // ───────── 6주차 · 법(강의자료) ─────────
-  { week: 6, type: "law", term: "권리능력 규정 (민법 3조)", answer: "사람은 생존한 동안 권리와 의무의 주체가 된다", point: "출생부터 사망까지 평등하게." },
+  { week: 6, type: "law", term: "권리능력 규정 (민법 3조)", gichul: true, answer: "사람은 생존한 동안 권리와 의무의 주체가 된다", point: "출생부터 사망까지 평등하게." },
   { week: 6, type: "law", term: "출생 시점 학설", answer: "민법: 전부노출설 / 형법: 진통설", point: "형법은 낙태죄와 살인죄를 구분하려고 진통설." },
   { week: 6, type: "law", term: "출생신고 기한과 제재", answer: "1개월 이내, 위반 시 5만 원 이하 과태료", point: "「가족관계의 등록 등에 관한 법률」." },
   { week: 6, type: "law", term: "출생신고의 성격", answer: "보고적 신고", point: "신고로 효력이 생기는 것은 창설적 신고." },
@@ -409,7 +415,7 @@ const CARDS = [
   { week: 6, type: "law", term: "사망 시점 통설", answer: "심정지설", point: "장기이식법 관련 뇌사설도 있음." },
   { week: 6, type: "law", term: "사망신고 기한", answer: "안 날부터 1개월 이내", point: "진단서·검안서 첨부, 보고적 신고." },
   { week: 6, type: "law", term: "사망 입증 곤란 구제 제도 3가지", answer: "동시사망 추정 · 인정사망 · 실종선고", point: "실종선고는 가정법원이 사망으로 '간주'." },
-  { week: 6, type: "law", term: "의사능력 판례", answer: "대법원 2002.10.11. 2001다10113", point: "행위의 의미·결과를 합리적으로 판단하는 능력." },
+  { week: 6, type: "law", term: "의사능력 판례", gichul: true, answer: "대법원 2002.10.11. 2001다10113", point: "행위의 의미·결과를 합리적으로 판단하는 능력." },
   { week: 6, type: "law", term: "의사무능력자 의사표시의 효력", answer: "무효 (상대방도 주장 가능)", point: "제한능력자의 행위는 '취소'와 구분." },
   { week: 6, type: "law", term: "행위능력의 정의", answer: "단독으로 유효한 법률행위를 할 수 있는 자격", point: "" },
   { week: 6, type: "law", term: "민법상 제한능력자 4가지", answer: "미성년자 · 피성년후견인 · 피한정후견인 · 피특정후견인", point: "피특정후견인은 행위능력 제한 없음." },
@@ -419,7 +425,7 @@ const CARDS = [
   { week: 6, type: "law", term: "성년 나이", answer: "만 19세", point: "" },
   { week: 6, type: "law", term: "미성년자 동의 사실의 증명책임", answer: "동의가 있었다고 주장하는 상대방", point: "" },
   { week: 6, type: "law", term: "미성년자가 단독으로 할 수 있는 행위", answer: "권리만 얻는 행위 · 허락된 재산 처분 · 허락된 영업 · 취소 · 혼인 후 행위 · 대리 · 유언(17세) · 근로계약과 임금 청구 등", point: "" },
-  { week: 6, type: "law", term: "미성년자 법정대리인 순서와 권한", answer: "1순위 친권자, 2순위 미성년후견인 / 동의권·대리권·취소권", point: "" },
+  { week: 6, type: "law", term: "미성년자 법정대리인 순서와 권한", gichul: true, answer: "1순위 친권자, 2순위 미성년후견인 / 동의권·대리권·취소권", point: "" },
   { week: 6, type: "law", term: "피성년후견인의 요건", answer: "사무처리 능력이 '지속적으로 결여'", point: "피한정후견인은 '부족', 피특정후견인은 '일시적·특정 사무'." },
   { week: 6, type: "law", term: "후견 개시 청구권자 (공통)", answer: "본인 · 배우자 · 4촌 이내 친족 · 후견인 등 · 검사 · 지자체장", point: "요건을 갖추면 가정법원은 반드시 심판." },
   { week: 6, type: "law", term: "피성년후견인도 취소할 수 없는 행위", answer: "일용품 구입 등 대가가 과도하지 않은 일상 행위", point: "법원이 정한 범위도 취소 불가." },
@@ -438,10 +444,10 @@ const CARDS = [
   { week: 7, type: "movie", term: "에드 마스리 역 배우", answer: "앨버트 피니", point: "아카데미 남우조연상 후보." },
   { week: 7, type: "movie", term: "에린이 처음 맡은 일", answer: "부동산 서류 정리 (젠슨 부부 집 매입 건)", point: "그 안에 의료 기록이 섞여 있었음." },
   { week: 7, type: "movie", term: "피해 마을", answer: "캘리포니아주 힝클리 (Hinkley)", point: "촬영은 보론(Boron)." },
-  { week: 7, type: "movie", term: "오염을 일으킨 회사", answer: "PG&E (퍼시픽 가스 앤드 일렉트릭)", point: "" },
+  { week: 7, type: "movie", term: "오염을 일으킨 회사", gichul: true, answer: "PG&E (퍼시픽 가스 앤드 일렉트릭)", point: "" },
   { week: 7, type: "movie", term: "도나 젠슨의 대답 '○○ 때문에요'", answer: "크롬", point: "PG&E가 왜 병원비를 대냐고 묻자." },
   { week: 7, type: "movie", term: "젠슨 부부의 병", answer: "도나: 여러 종양 / 피트: 호지킨 림프종", point: "배우 마그 헬겐버거 · 마이클 하니." },
-  { week: 7, type: "movie", term: "지하수 오염 물질", answer: "6가 크롬 (hexavalent chromium)", point: "PG&E는 주민에게 안전한 크롬을 쓴다고 함." },
+  { week: 7, type: "movie", term: "지하수 오염 물질", gichul: true, answer: "6가 크롬 (hexavalent chromium)", point: "PG&E는 주민에게 안전한 크롬을 쓴다고 함." },
   { week: 7, type: "movie", term: "에린이 자료를 찾은 곳", answer: "수질관리위원회 (water board) 기록", point: "" },
   { week: 7, type: "movie", term: "에드가 에린을 해고한 이유", answer: "사무실을 비워서", point: "자료를 보고 다시 고용." },
   { week: 7, type: "movie", term: "에린의 남자친구", answer: "조지 — 오토바이족 이웃 (에런 에크하트)", point: "아이들을 돌봐 주다 떠남." },
@@ -451,14 +457,14 @@ const CARDS = [
   { week: 7, type: "movie", term: "결정적 증거를 넘긴 사람", answer: "찰스 엠브리 (전 PG&E 직원)", point: "실제 제보자는 척 에버솔." },
   { week: 7, type: "movie", term: "엠브리가 받았던 지시", answer: "문서 파기", point: "'좋은 직원이 아니었다'며 보관." },
   { week: 7, type: "movie", term: "결정적 증거 문서", answer: "1966년 메모", point: "본사가 오염을 알고 쉬쉬하라고 지시." },
-  { week: 7, type: "movie", term: "PG&E가 지급하게 된 금액", answer: "3억 3,300만 달러", point: "" },
+  { week: 7, type: "movie", term: "PG&E가 지급하게 된 금액", gichul: true, answer: "3억 3,300만 달러", point: "" },
   { week: 7, type: "movie", term: "에린의 보너스", answer: "200만 달러", point: "에드가 금액을 '바꿨다'고 한 뒤 공개." },
   { week: 7, type: "movie", term: "실제 에린의 카메오", answer: "식당 웨이트리스 '줄리아'", point: "실제 에드는 식당 손님, 실제 판사도 본인 역." },
   { week: 7, type: "movie", term: "실제 교통사고 소송 담당 변호사", answer: "짐 비티토 (에드의 동업자)", point: "영화에선 에드로 바뀜." },
   { week: 7, type: "movie", term: "에드의 비서", answer: "브렌다 (콘차타 페럴)", point: "" },
 
   // ───────── 7주차 · 법(강의자료) ─────────
-  { week: 7, type: "law", term: "Pro bono publico의 뜻", answer: "공익을 위하여", point: "무료 또는 대폭 할인된 법률 서비스." },
+  { week: 7, type: "law", term: "Pro bono publico의 뜻", gichul: true, answer: "공익을 위하여", point: "무료 또는 대폭 할인된 법률 서비스." },
   { week: 7, type: "law", term: "로펌 평판 지표가 되는 순위", answer: "미국변호사협회의 프로보노 활동 순위", point: "" },
   { week: 7, type: "law", term: "대한법률구조공단", answer: "1987년 법률구조법으로 설립된 비영리 공익법인", point: "무료 상담, 소송비용은 원칙적으로 상환." },
   { week: 7, type: "law", term: "법률구조공단 전액 무료 소송 대상", answer: "농·어민, 기초생활수급자, 장애인 등", point: "월평균 수입 260만 원 이하는 저렴한 비용." },
@@ -480,51 +486,71 @@ const CARDS = [
   { week: 7, type: "law", term: "결함을 알고도 방치한 경우 배상", answer: "손해의 3배 이내", point: "생명·신체에 중대한 손해." },
   { week: 7, type: "law", term: "제조업자를 알 수 없을 때", answer: "영리 목적으로 공급(판매·대여)한 자가 배상", point: "" },
   { week: 7, type: "law", term: "리콜 정보 확인처", answer: "제품안전정보센터 (safetykorea.kr)", point: "같은 제품 구입자 모두 구제." },
-  { week: 7, type: "law", term: "징벌적 손해배상(punitive damages)", answer: "실제 손해보다 많이 배상시켜 응징·억제", point: "고의적 불법행위·제조물책임·명예훼손·음주운전." },
+  { week: 7, type: "law", term: "징벌적 손해배상(punitive damages)", gichul: true, answer: "실제 손해보다 많이 배상시켜 응징·억제", point: "고의적 불법행위·제조물책임·명예훼손·음주운전." },
   { week: 7, type: "law", term: "앨라배마 위성접시 사건", answer: "1,200달러 초과 징수 → 5억 8천만 달러 배상", point: "" },
   { week: 7, type: "law", term: "1994년 맥도날드 커피 사건", answer: "290만 달러 배상 판결", point: "운전 중 커피를 엎질러 화상." },
   { week: 7, type: "law", term: "O.J. 심슨 민사 배상", answer: "1997년 2월, 3,350만 달러 (전보 850만 + 징벌 2,500만)", point: "형사는 무죄. 샌타모니카 지방법원 배심." },
-  { week: 7, type: "law", term: "우리 판례의 징벌적 손해배상 입장", answer: "영미법계 제도, 전보배상 원칙인 대륙법계엔 맞지 않음", point: "도입 주장 분야: 제조물책임·성희롱·언론피해·장애인 권익·집단소송." }
+  { week: 7, type: "law", term: "우리 판례의 징벌적 손해배상 입장", answer: "영미법계 제도, 전보배상 원칙인 대륙법계엔 맞지 않음", point: "도입 주장 분야: 제조물책임·성희롱·언론피해·장애인 권익·집단소송." },
+  // ───────── 족보(기출) 보강 카드 ─────────
+  { week: 2, type: "movie", gichul: true, term: "족보 요약: 헬렌 수녀의 노력과 결말", answer: "폰슬렛의 무죄를 밝히려 애쓰지만 결국 유죄가 드러나고 약물주사로 사형", point: "족보 표현. 영화에서 헬렌의 목표는 무죄 입증보다 감형(종신형)이었고, 마지막에 폰슬렛이 자백한다." },
+  { week: 3, type: "law", gichul: true, term: "성문법률주의", answer: "범죄와 형벌은 성문의 법률로 규정해야 한다 (= 관습형법금지의 원칙)", point: "죄형법정주의 파생원칙 ①" },
+  { week: 3, type: "law", gichul: true, term: "소급효금지의 원칙", answer: "행위 당시 처벌되지 않던 행위를 나중에 만든 법으로 처벌하지 못한다", point: "단, 피고인에게 유리한 소급(신법이 가볍거나 범죄가 안 될 때)은 허용 — 형법 1조 2항." },
+  { week: 3, type: "law", gichul: true, term: "명확성의 원칙", answer: "구성요건과 형사제재를 법문에 명확하게 규정해야 한다", point: "법관의 자의적 남용 방지 + 국민의 예측 가능성." },
+  { week: 3, type: "law", gichul: true, term: "유추적용금지의 원칙", answer: "형벌법규는 엄격히 해석하고 비슷한 사항에 유추해 적용하면 안 된다", point: "예: 창밖에서 들여다본 것은 주거침입 아님. 주거침입죄는 3년 이하 징역 또는 500만 원 이하 벌금." },
+  { week: 3, type: "law", gichul: true, term: "적정성의 원칙", answer: "형벌법규의 실질적 내용이 정당하고 합리적이어야 한다", point: "형벌은 최후의 수단 — 필요성과 보충성." },
+  { week: 3, type: "law", gichul: true, term: "주거침입죄의 법정형", answer: "3년 이하의 징역 또는 500만 원 이하의 벌금", point: "유추적용금지 원칙의 예시로 나옴. 족보에 빨간색 표시." },
+  { week: 3, type: "law", gichul: true, term: "13세 미만의 사람도 강간죄의 객체가 될 수 있는가?", answer: "된다 (사람인 이상 기혼·미혼·성년·미성년 불문)", point: "족보에 빨간색 표시." },
+  { week: 3, type: "law", gichul: true, term: "강간죄 기수에 필요하지 않은 것", answer: "성기의 완전한 삽입 · 사정 · 성욕의 만족", point: "삽입하는 순간 기수." },
+  { week: 4, type: "movie", gichul: true, term: "카드 외판원 이재혁(이혁재)의 카드회사 이름", answer: "알지카드", point: "족보에 '카드직원 회사이름'으로 나옴." },
+  { week: 4, type: "movie", gichul: true, uncertain: true, term: "족보 키워드 '10억-1억'", answer: "'큰 거 한 장'을 두목은 10억으로 이해. 1억은 다른 쪽이 뜻한 금액으로 추정", point: "족보에는 '10억-1억'으로만 적혀 있어 누가 1억을 뜻했는지는 확인 못 함. 이후 훈은 20억(달러로)을 요구, 두목은 200만 달러 준비." },
+  { week: 4, type: "movie", gichul: true, uncertain: true, term: "족보 키워드 '담보'", answer: "차가 바뀌자 외국인이 한 명을 담보(인질)로 남기라고 한 장면으로 추정", point: "족보에는 단어만 있고, 어느 장면인지는 확인 못 함. 영화를 보고 직접 확인하세요." },
+  { week: 4, type: "movie", gichul: true, term: "임 차장의 소속 기관", answer: "국가안전정보국", point: "결말에서 삼합회 두목을 체포." },
+  { week: 6, type: "movie", gichul: true, term: "여자 주인공 리타의 직업", answer: "변호사", point: "샘의 사건을 무료로 맡음." },
+  { week: 6, type: "law", gichul: true, term: "권리능력을 가지는 시기", answer: "출생한 때", point: "족보에 빨간색 표시. 출생신고로 생기는 것이 아님(보고적 신고)." },
+  { week: 6, type: "law", gichul: true, term: "의사능력의 정의", answer: "자신의 행위의 의미나 결과를 정상적인 인식력과 예지력으로 합리적으로 판단할 수 있는 정신적 능력", point: "의사무능력자의 의사표시는 무효." },
+  { week: 7, type: "movie", gichul: true, term: "에린의 직업 (족보 표현)", answer: "법률 종사자이자 소비자·환경 운동가", point: "영화 속에서는 에드 마스리 법률사무소의 사무원(파일 정리 직원)." },
+  { week: 7, type: "movie", gichul: true, term: "에드 마스리의 직업", answer: "변호사", point: "에린을 고용한 법률사무소 대표." },
+  { week: 7, type: "movie", gichul: true, term: "에린이 한 일과 연결되는 강의 개념", answer: "프로보노 활동", point: "족보: '프로보노 활동'. 공익을 위한 법률 서비스." },
 ];
 
 /* 모의고사: 5세트 × 20문항. 세트마다 영화 14 + 법 6. 빈칸(blank)·단답(short)만. */
 const QUESTIONS = [
   // ── 1세트 ──
-  { set: 1, no: 1, week: 2, type: "movie", kind: "short", q: "《데드 맨 워킹》에서 헬렌 프레진의 신분은?", answers: ["수녀", "nun", "가톨릭수녀"], explain: "뉴올리언스 빈민가의 호프 하우스에서 일하는 수녀. 배우 수전 서랜든." },
+  { set: 1, no: 1, gichul: true, week: 2, type: "movie", kind: "short", q: "《데드 맨 워킹》에서 헬렌 프레진의 신분은?", answers: ["수녀", "nun", "가톨릭수녀"], explain: "뉴올리언스 빈민가의 호프 하우스에서 일하는 수녀. 배우 수전 서랜든." },
   { set: 1, no: 2, week: 5, type: "movie", kind: "short", q: "《타임 투 킬》의 배경이 되는 미국 주는?", answers: ["미시시피", "미시시피주", "mississippi"], explain: "가상 도시 클랜턴, 미시시피주. 촬영은 미시시피주 캔턴." },
   { set: 1, no: 3, week: 4, type: "movie", kind: "short", q: "《투 가이즈》에서 차태현이 맡은 김훈의 직업은?", answers: ["발레파킹", "대리운전", "발렛파킹", "대리운전기사", "발레파킹기사", "발렛파킹기사", "주차요원"], explain: "대리운전·발레파킹 기사. 카드깡과 낭비벽으로 빚더미에 앉음." },
   { set: 1, no: 4, week: 3, type: "movie", kind: "short", q: "《단지 그대가 여자라는 이유만으로》에서 주인공 정희 역을 맡은 배우는?", answers: ["원미경"], explain: "이 역으로 청룡영화상 여우주연상을 받았다." },
-  { set: 1, no: 5, week: 6, type: "movie", kind: "short", q: "《아이 엠 샘》에서 샘이 일하는 곳은?", answers: ["스타벅스", "starbucks", "커피숍"], explain: "샘은 스타벅스 직원. 정신연령은 약 7세로 설정." },
+  { set: 1, no: 5, gichul: true, week: 6, type: "movie", kind: "short", q: "《아이 엠 샘》에서 샘이 일하는 곳은?", answers: ["스타벅스", "starbucks", "커피숍"], explain: "샘은 스타벅스 직원. 정신연령은 약 7세로 설정." },
   { set: 1, no: 6, week: 7, type: "movie", kind: "short", q: "《에린 브로코비치》에서 에린이 에드 마스리를 처음 만나게 된 소송은?", answers: ["교통사고", "교통사고소송", "자동차사고", "차사고", "교통사고손해배상"], explain: "의사가 모는 차와 사고가 나 소송했지만, 반대신문 때 거친 말을 해서 패소. 실제로는 에드의 동업자 짐 비티토가 맡았던 사건." },
   { set: 1, no: 7, week: 2, type: "movie", kind: "blank", q: "《데드 맨 워킹》의 폰슬렛은 ( )주의 주립교도소에 수감되어 있다.", answers: ["루이지애나", "louisiana"], explain: "루이지애나 주립교도소(앙골라)." },
   { set: 1, no: 8, week: 5, type: "movie", kind: "blank", q: "《타임 투 킬》에서 성폭행당한 토냐 헤일리의 나이는 ( )살이다.", answers: ["10", "열", "10세", "10살"], explain: "10세 흑인 소녀. 식료품점에서 집에 가던 길에 납치됨." },
   { set: 1, no: 9, week: 4, type: "movie", kind: "short", q: "《투 가이즈》에서 박중태가 김훈을 부르는 별명(신체 장기 이름)은?", answers: ["콩팥", "신장"], explain: "장기를 팔겠다는 협박조의 별명." },
-  { set: 1, no: 10, week: 3, type: "movie", kind: "short", q: "《단지 그대가 여자라는 이유만으로》에서 정희가 저항하며 깨문 가해 청년의 신체 부위는?", answers: ["혀"], explain: "실화(변월수 사건)에서도 가해자의 혀가 절단됐다." },
-  { set: 1, no: 11, week: 6, type: "movie", kind: "blank", q: "루시의 이름은 비틀스의 노래 「Lucy in the Sky with ( )」에서 따왔다.", answers: ["Diamonds", "다이아몬드", "다이아몬즈", "diamond"], explain: "그래서 이름이 루시 다이아몬드 도슨. OST는 전부 비틀스 리메이크." },
+  { set: 1, no: 10, gichul: true, week: 3, type: "movie", kind: "short", q: "《단지 그대가 여자라는 이유만으로》에서 정희가 저항하며 깨문 가해 청년의 신체 부위는?", answers: ["혀"], explain: "실화(변월수 사건)에서도 가해자의 혀가 절단됐다." },
+  { set: 1, no: 11, gichul: true, week: 6, type: "movie", kind: "blank", q: "루시의 이름은 비틀스의 노래 「Lucy in the Sky with ( )」에서 따왔다.", answers: ["Diamonds", "다이아몬드", "다이아몬즈", "diamond"], explain: "그래서 이름이 루시 다이아몬드 도슨. OST는 전부 비틀스 리메이크." },
   { set: 1, no: 12, week: 7, type: "movie", kind: "short", q: "《에린 브로코비치》에서 오염 피해를 입은 캘리포니아 마을 이름은?", answers: ["힝클리", "hinkley", "힌클리", "힝클리마을"], explain: "캘리포니아주 힝클리. 촬영은 보론(Boron)에서 했다." },
   { set: 1, no: 13, week: 2, type: "movie", kind: "short", q: "《데드 맨 워킹》 시작 시점에 폰슬렛이 사형수 감방에 있던 기간은?", answers: ["6년", "6", "육년"], explain: "6년째 복역 중에 헬렌에게 편지를 보낸다." },
   { set: 1, no: 14, week: 5, type: "movie", kind: "short", q: "《타임 투 킬》에서 범인들이 토냐를 버린 곳은?", answers: ["강", "강물", "river"], explain: "목을 매달려다 실패하고 강에 버렸지만 토냐는 살아남았다." },
   { set: 1, no: 15, week: 2, type: "law", kind: "short", q: "형법 제41조의 형벌 9종 중 가장 가벼운 형벌은?", answers: ["몰수"], explain: "사형 > 징역 > 금고 > 자격상실 > 자격정지 > 벌금 > 구류 > 과료 > 몰수." },
   { set: 1, no: 16, week: 3, type: "law", kind: "blank", q: "죄형법정주의는 헌법 제12조·제13조와 형법 제( )조에 규정되어 있다.", answers: ["1", "1조", "제1조", "일"], explain: "형법 1조 1항: 범죄의 성립과 처벌은 행위시의 법률에 의한다." },
   { set: 1, no: 17, week: 2, type: "law", kind: "short", q: "우리나라가 마지막으로 사형을 집행한 날짜는?", answers: ["1997년12월30일", "19971230", "1997.12.30", "97년12월30일"], explain: "이후 10년 넘게 집행이 없어 사실상 사형폐지국으로 분류된다." },
-  { set: 1, no: 18, week: 3, type: "law", kind: "short", q: "죄형법정주의의 파생원칙인 '성문법률주의'의 다른 이름은?", answers: ["관습형법금지의원칙", "관습형법금지", "관습형법금지원칙"], explain: "관습법으로 처벌하면 존재가 불분명한 법으로 처벌받게 되므로 금지." },
+  { set: 1, no: 18, gichul: true, week: 3, type: "law", kind: "short", q: "죄형법정주의의 파생원칙인 '성문법률주의'의 다른 이름은?", answers: ["관습형법금지의원칙", "관습형법금지", "관습형법금지원칙"], explain: "관습법으로 처벌하면 존재가 불분명한 법으로 처벌받게 되므로 금지." },
   { set: 1, no: 19, week: 6, type: "law", kind: "blank", q: "민법 제3조: 사람은 ( ) 동안 권리와 의무의 주체가 된다.", answers: ["생존한", "생존", "살아있는"], explain: "출생한 때부터 사망한 때까지 평등하게 권리능력을 가진다." },
-  { set: 1, no: 20, week: 7, type: "law", kind: "short", q: "'Pro bono publico'의 뜻은?", answers: ["공익을위하여", "공익을위해", "공익을위한", "공익"], explain: "무보수 또는 대폭 할인된 법률 서비스. 《데드 맨 워킹》·《아이 엠 샘》의 변호사도 프로보노로 사건을 맡았다." },
+  { set: 1, no: 20, gichul: true, week: 7, type: "law", kind: "short", q: "'Pro bono publico'의 뜻은?", answers: ["공익을위하여", "공익을위해", "공익을위한", "공익"], explain: "무보수 또는 대폭 할인된 법률 서비스. 《데드 맨 워킹》·《아이 엠 샘》의 변호사도 프로보노로 사건을 맡았다." },
 
   // ── 2세트 ──
-  { set: 2, no: 1, week: 7, type: "movie", kind: "short", q: "《에린 브로코비치》에서 오염을 일으킨 회사 이름(영문 약자)은?", answers: ["PG&E", "pge", "피지앤이", "퍼시픽가스앤드일렉트릭", "pacificgasandelectric"], explain: "퍼시픽 가스 앤드 일렉트릭. 주민들에게는 안전한 크롬을 쓴다고 속였다." },
-  { set: 2, no: 2, week: 4, type: "movie", kind: "short", q: "《투 가이즈》에서 중태가 'GPS'라며 훈에게 삼키게 한 것의 진짜 정체는?", answers: ["바둑돌", "흰바둑돌", "흰색바둑돌", "백돌"], explain: "도망쳐도 찾을 수 있다는 거짓 협박이었다." },
+  { set: 2, no: 1, gichul: true, week: 7, type: "movie", kind: "short", q: "《에린 브로코비치》에서 오염을 일으킨 회사 이름(영문 약자)은?", answers: ["PG&E", "pge", "피지앤이", "퍼시픽가스앤드일렉트릭", "pacificgasandelectric"], explain: "퍼시픽 가스 앤드 일렉트릭. 주민들에게는 안전한 크롬을 쓴다고 속였다." },
+  { set: 2, no: 2, gichul: true, week: 4, type: "movie", kind: "short", q: "《투 가이즈》에서 중태가 'GPS'라며 훈에게 삼키게 한 것의 진짜 정체는?", answers: ["바둑돌", "흰바둑돌", "흰색바둑돌", "백돌"], explain: "도망쳐도 찾을 수 있다는 거짓 협박이었다." },
   { set: 2, no: 3, week: 2, type: "movie", kind: "short", q: "《데드 맨 워킹》에서 공범 칼 비텔로가 받은 형은?", answers: ["가석방없는종신형", "종신형", "무기징역", "가석방없는무기징역", "가석방없는무기형"], explain: "같은 범죄인데 폰슬렛은 사형, 비텔로는 종신형. 형량 불균형이 쟁점." },
   { set: 2, no: 4, week: 6, type: "movie", kind: "short", q: "《아이 엠 샘》에서 이웃 애니가 앓고 있는 병은?", answers: ["광장공포증", "외출공포증", "agoraphobia", "대인기피증"], explain: "외출공포증(광장공포증). 재판에서 그 공포를 이기고 증언한다. ※'대인기피증'은 엄밀히 다르지만 관대하게 인정." },
   { set: 2, no: 5, week: 5, type: "movie", kind: "short", q: "《타임 투 킬》에서 칼 리 헤일리가 두 범인을 총으로 쏜 장소는?", answers: ["법원", "법원계단", "카운티법원", "법원건물"], explain: "법원 계단에서 자동소총을 난사. 부보안관 루니도 다쳤다." },
   { set: 2, no: 6, week: 3, type: "movie", kind: "short", q: "《단지 그대가 여자라는 이유만으로》에서 혀를 물린 청년 최종민 역을 맡은 배우는?", answers: ["김민종"], explain: "최종민은 오히려 정희를 고소해 구속시킨다." },
-  { set: 2, no: 7, week: 7, type: "movie", kind: "short", q: "《에린 브로코비치》에서 힝클리 지하수를 오염시킨 물질은?", answers: ["6가크롬", "육가크롬", "크롬6", "크롬", "hexavalentchromium", "6가크로뮴", "크로뮴"], explain: "발암물질인 6가 크롬(hexavalent chromium)." },
-  { set: 2, no: 8, week: 4, type: "movie", kind: "short", q: "《투 가이즈》에서 외국인의 가방 안에 들어 있던 물건은?", answers: ["반도체", "최첨단반도체", "반도체칩"], explain: "국내에서 개발된 최첨단 반도체. 외국인은 산업스파이였다." },
+  { set: 2, no: 7, gichul: true, week: 7, type: "movie", kind: "short", q: "《에린 브로코비치》에서 힝클리 지하수를 오염시킨 물질은?", answers: ["6가크롬", "육가크롬", "크롬6", "크롬", "hexavalentchromium", "6가크로뮴", "크로뮴"], explain: "발암물질인 6가 크롬(hexavalent chromium)." },
+  { set: 2, no: 8, gichul: true, week: 4, type: "movie", kind: "short", q: "《투 가이즈》에서 외국인의 가방 안에 들어 있던 물건은?", answers: ["반도체", "최첨단반도체", "반도체칩"], explain: "국내에서 개발된 최첨단 반도체. 외국인은 산업스파이였다." },
   { set: 2, no: 9, week: 2, type: "movie", kind: "short", q: "《데드 맨 워킹》에서 폰슬렛을 무료로 변호한 변호사의 이름은?", answers: ["힐튼바버", "바버", "hiltonbarber", "barber"], explain: "힐튼 바버(로버트 프로스키). 프로보노로 사면위원회 청문회를 준비했다." },
-  { set: 2, no: 10, week: 6, type: "movie", kind: "short", q: "《아이 엠 샘》에서 변호사 리타가 사건을 맡은 수임료 방식은?", answers: ["무료", "프로보노", "probono", "무료변론", "공짜", "무료변호"], explain: "동료들 앞에서 체면 때문에 무료(프로보노)로 맡았다." },
+  { set: 2, no: 10, gichul: true, week: 6, type: "movie", kind: "short", q: "《아이 엠 샘》에서 변호사 리타가 사건을 맡은 수임료 방식은?", answers: ["무료", "프로보노", "probono", "무료변론", "공짜", "무료변호"], explain: "동료들 앞에서 체면 때문에 무료(프로보노)로 맡았다." },
   { set: 2, no: 11, week: 5, type: "movie", kind: "short", q: "《타임 투 킬》에서 칼 리의 총격에 휘말려 다리를 절단한 부보안관의 이름은?", answers: ["드웨인루니", "루니", "dwaynelooney", "looney"], explain: "드웨인 루니(크리스 쿠퍼)." },
   { set: 2, no: 12, week: 3, type: "movie", kind: "blank", q: "《단지 그대가 여자라는 이유만으로》에서 정희는 1심에서 유죄를 받고 ( )로 풀려난다.", answers: ["집행유예", "집유"], explain: "검찰·재판부·상대 변호사의 모욕 끝에 유죄. 실제 사건 1심은 징역 6월, 집행유예 1년." },
-  { set: 2, no: 13, week: 4, type: "movie", kind: "short", q: "《투 가이즈》에서 반도체를 노리는 범죄조직은?", answers: ["삼합회", "트라이어드", "triad"], explain: "두목 '올백'(정흥채)과 킬러 린 하이펑(김구택)." },
+  { set: 2, no: 13, gichul: true, week: 4, type: "movie", kind: "short", q: "《투 가이즈》에서 반도체를 노리는 범죄조직은?", answers: ["삼합회", "트라이어드", "triad"], explain: "두목 '올백'(정흥채)과 킬러 린 하이펑(김구택)." },
   { set: 2, no: 14, week: 7, type: "movie", kind: "blank", q: "에린은 중재 동의를 받기 위해 원고 ( )명 전원의 서명을 받아 냈다.", answers: ["634", "634명", "육백삼십사"], explain: "구속력 있는 중재에는 원고 대부분의 동의가 필요했다." },
   { set: 2, no: 15, week: 2, type: "law", kind: "short", q: "우리나라에서 군인에 대한 사형 집행 방법은?", answers: ["총살형", "총살"], explain: "민간인은 교수형, 군인은 총살형." },
   { set: 2, no: 16, week: 3, type: "law", kind: "blank", q: "전쟁 중 군인이 적군을 살해한 경우 위법성이 조각되는 근거는 형법 제( )조 정당행위다.", answers: ["20", "20조", "제20조", "이십"], explain: "정당행위 20조, 정당방위 21조." },
@@ -539,7 +565,7 @@ const QUESTIONS = [
   { set: 3, no: 3, week: 5, type: "movie", kind: "short", q: "《타임 투 킬》에서 제이크 브리건스 역을 맡은 배우는?", answers: ["매튜매커너히", "매튜맥커너히", "매커너히", "맥커너히", "matthewmcconaughey", "매튜매카너히", "매카너히"], explain: "젊은 백인 변호사 역. MTV 무비 어워드 신인상(Breakthrough)." },
   { set: 3, no: 4, week: 7, type: "movie", kind: "short", q: "《에린 브로코비치》에서 PG&E의 문서 파기 지시를 받았지만 몰래 보관한 자료를 에린에게 넘긴 사람은?", answers: ["찰스엠브리", "엠브리", "charlesembry", "embry"], explain: "찰스 엠브리(트레이시 월터). 실제 제보자는 척 에버솔." },
   { set: 3, no: 5, week: 3, type: "movie", kind: "short", q: "《단지 그대가 여자라는 이유만으로》에서 항소심 때 정희를 변호한 여변호사 역의 배우는?", answers: ["손숙"], explain: "이 역으로 청룡영화상 여우조연상을 받았다." },
-  { set: 3, no: 6, week: 4, type: "movie", kind: "short", q: "《투 가이즈》에서 삼합회 두목은 '큰 거 한 장'이라는 말을 얼마로 이해했나?", answers: ["10억", "10억원", "십억", "십억원"], explain: "이 오해 때문에 협상 판이 커진다." },
+  { set: 3, no: 6, gichul: true, week: 4, type: "movie", kind: "short", q: "《투 가이즈》에서 삼합회 두목은 '큰 거 한 장'이라는 말을 얼마로 이해했나?", answers: ["10억", "10억원", "십억", "십억원"], explain: "이 오해 때문에 협상 판이 커진다." },
   { set: 3, no: 7, week: 6, type: "movie", kind: "short", q: "《아이 엠 샘》에서 변호사 리타 해리슨 역의 배우는?", answers: ["미셸파이퍼", "미쉘파이퍼", "파이퍼", "michellepfeiffer", "pfeiffer"], explain: "일 때문에 아들 윌리를 소홀히 하던 리타는 샘 덕분에 삶을 돌아본다." },
   { set: 3, no: 8, week: 2, type: "movie", kind: "short", q: "《데드 맨 워킹》에서 폰슬렛이 TV 인터뷰에서 '지도자'라고 칭찬한 역사적 인물은?", answers: ["히틀러", "아돌프히틀러", "hitler"], explain: "헬렌은 그런 말이 사람들이 당신을 죽이기 쉽게 만든다고 꾸짖는다." },
   { set: 3, no: 9, week: 5, type: "movie", kind: "short", q: "《타임 투 킬》에서 샌드라 불럭이 맡은 엘런 로아크의 신분은?", answers: ["법대생", "로스쿨학생", "법학도", "로스쿨생", "법대학생", "법학생"], explain: "제이크를 돕다가 KKK에게 납치·폭행당한다." },
@@ -547,21 +573,21 @@ const QUESTIONS = [
   { set: 3, no: 11, week: 3, type: "movie", kind: "short", q: "《단지 그대가 여자라는 이유만으로》의 마지막 재판에서 위증을 번복해 정희의 무죄를 이끈 인물은 정희와 어떤 관계인가?", answers: ["시누이", "남편의여동생", "시누"], explain: "사건 현장에 함께 있었던 시누이(진희진)." },
   { set: 3, no: 12, week: 6, type: "movie", kind: "short", q: "《아이 엠 샘》에서 루시를 맡은 위탁모의 이름(애칭)은?", answers: ["랜디", "랜디카펜터", "미란다카펜터", "randy", "미란다"], explain: "랜디(미란다) 카펜터, 배우 로라 던. 결국 루시를 샘에게 돌려보낸다." },
   { set: 3, no: 13, week: 2, type: "movie", kind: "short", q: "《데드 맨 워킹》에서 폰슬렛이 받은 거짓말탐지기 검사의 결과는?", answers: ["판정불가", "판정불능", "inconclusive", "결론없음", "결과없음", "판단불가"], explain: "스트레스 반응 때문에 '판정 불가(inconclusive)'." },
-  { set: 3, no: 14, week: 4, type: "movie", kind: "blank", q: "《투 가이즈》에서 최종 거래 때 삼합회 두목이 준비한 돈은 ( ) 달러다.", answers: ["200만", "200만달러", "2백만", "2백만달러", "2000000", "이백만"], explain: "훈이 20억을 달러로 달라고 요구했다." },
+  { set: 3, no: 14, gichul: true, week: 4, type: "movie", kind: "blank", q: "《투 가이즈》에서 최종 거래 때 삼합회 두목이 준비한 돈은 ( ) 달러다.", answers: ["200만", "200만달러", "2백만", "2백만달러", "2000000", "이백만"], explain: "훈이 20억을 달러로 달라고 요구했다." },
   { set: 3, no: 15, week: 2, type: "law", kind: "blank", q: "구류는 수형자를 1일 이상 ( ) 미만 교도소에 가두는 형벌이다.", answers: ["30일", "30", "삼십일"], explain: "징역·금고와 기간이 다르다." },
   { set: 3, no: 16, week: 2, type: "law", kind: "blank", q: "집행유예는 ( )년 이하의 징역 또는 금고를 선고할 때만 붙일 수 있다.", answers: ["3", "3년", "삼"], explain: "유예 기간은 1년~5년. 지나면 형 선고의 효력이 없어진다." },
   { set: 3, no: 17, week: 3, type: "law", kind: "short", q: "강간죄의 보호법익은?", answers: ["성적자기결정의자유", "성적자기결정권", "성적자기결정", "성적자유"], explain: "강제추행죄의 보호법익도 성적자기결정권." },
-  { set: 3, no: 18, week: 3, type: "law", kind: "blank", q: "강간죄는 ( )년 이상의 유기징역에 처한다.", answers: ["3", "3년", "삼"], explain: "친고죄 규정은 삭제되어 비친고죄가 되었다." },
+  { set: 3, no: 18, gichul: true, week: 3, type: "law", kind: "blank", q: "강간죄는 ( )년 이상의 유기징역에 처한다.", answers: ["3", "3년", "삼"], explain: "친고죄 규정은 삭제되어 비친고죄가 되었다." },
   { set: 3, no: 19, week: 6, type: "law", kind: "short", q: "태아의 권리능력에 관해 판례가 따르는 학설은?", answers: ["정지조건설"], explain: "살아서 태어나면 문제의 사실이 생긴 때로 소급해 권리능력을 취득한다." },
   { set: 3, no: 20, week: 7, type: "law", kind: "blank", q: "중재는 ( )제이므로 소송보다 빠르고 비용이 싸다.", answers: ["단심", "단심제"], explain: "비공개이고 전문가를 중재인으로 고를 수 있다. 영화 속 PG&E 사건도 중재로 해결." },
 
   // ── 4세트 ──
   { set: 4, no: 1, week: 5, type: "movie", kind: "short", q: "《타임 투 킬》에서 사형을 구형한 지방검사의 이름은?", answers: ["루퍼스버클리", "버클리", "rufusbuckley", "buckley"], explain: "루퍼스 버클리(케빈 스페이시). 정치적 야심 때문에 사건을 맡았다." },
   { set: 4, no: 2, week: 4, type: "movie", kind: "short", q: "《투 가이즈》에서 두 사람이 옥상에서 탈출할 때 붙잡은 것은?", answers: ["소방호스", "호스", "소화전호스"], explain: "호스가 짧아 헬스장 앞에서 멈췄다." },
-  { set: 4, no: 3, week: 2, type: "movie", kind: "short", q: "《데드 맨 워킹》에서 폰슬렛의 사형은 어떤 방식으로 집행되나?", answers: ["약물주사", "독극물주사", "약물주입", "치명적주사", "lethalinjection", "독극물주입", "약물주사형"], explain: "영화는 약물주사. 실제 모델 엘모 패트릭 소니어는 전기의자로 처형됐다." },
+  { set: 4, no: 3, gichul: true, week: 2, type: "movie", kind: "short", q: "《데드 맨 워킹》에서 폰슬렛의 사형은 어떤 방식으로 집행되나?", answers: ["약물주사", "독극물주사", "약물주입", "치명적주사", "lethalinjection", "독극물주입", "약물주사형"], explain: "영화는 약물주사. 실제 모델 엘모 패트릭 소니어는 전기의자로 처형됐다." },
   { set: 4, no: 4, week: 6, type: "movie", kind: "short", q: "《아이 엠 샘》 재판에서 샘을 몰아붙인 상대 측 변호사의 이름은?", answers: ["터너", "turner", "미스터터너"], explain: "터너(리처드 시프)의 추궁에 샘이 양육 능력이 없다고 인정해 패소." },
-  { set: 4, no: 5, week: 7, type: "movie", kind: "short", q: "《에린 브로코비치》에서 판사가 PG&E에게 지급하라고 한 금액은?", answers: ["3억3300만달러", "333000000달러", "3억3천3백만달러", "3억3300만", "333백만달러", "3억3천300만달러"], explain: "3억 3,300만 달러. 원고 634명에게." },
-  { set: 4, no: 6, week: 3, type: "movie", kind: "short", q: "《단지 그대가 여자라는 이유만으로》에서 영화 속 최종 판결은?", answers: ["무죄"], explain: "영화는 2심에서 원심을 깨고 무죄. 실제 변월수 사건은 대법원(1989.8.8. 89도358)에서 무죄 확정." },
+  { set: 4, no: 5, gichul: true, week: 7, type: "movie", kind: "short", q: "《에린 브로코비치》에서 판사가 PG&E에게 지급하라고 한 금액은?", answers: ["3억3300만달러", "333000000달러", "3억3천3백만달러", "3억3300만", "333백만달러", "3억3천300만달러"], explain: "3억 3,300만 달러. 원고 634명에게." },
+  { set: 4, no: 6, gichul: true, week: 3, type: "movie", kind: "short", q: "《단지 그대가 여자라는 이유만으로》에서 영화 속 최종 판결은?", answers: ["무죄"], explain: "영화는 2심에서 원심을 깨고 무죄. 실제 변월수 사건은 대법원(1989.8.8. 89도358)에서 무죄 확정." },
   { set: 4, no: 7, week: 5, type: "movie", kind: "short", q: "《타임 투 킬》에서 범인 빌리 레이 콥의 형제로 KKK에 가입하는 인물은?", answers: ["프레디리콥", "프레디", "프레디콥", "freddieleecobb", "freddie"], explain: "프레디 리 콥(키퍼 서덜랜드). 결말에서 체포된다." },
   { set: 4, no: 8, week: 4, type: "movie", kind: "short", q: "《투 가이즈》에서 돈 가방과 반도체 가방을 바꿔치기한 장소는?", answers: ["공항역물품보관함", "공항역보관함", "공항역", "물품보관함", "보관함", "사물함"], explain: "지선이 미리 개조해 둔 공항역 보관함. 촬영은 광주 상무역." },
   { set: 4, no: 9, week: 2, type: "movie", kind: "short", q: "《데드 맨 워킹》 폰슬렛의 실제 모델이 된 사형수는 어떤 방식으로 처형되었나?", answers: ["전기의자", "전기의자형", "전기사형", "전기살"], explain: "영화는 약물주사로 바꿨다." },
@@ -571,7 +597,7 @@ const QUESTIONS = [
   { set: 4, no: 13, week: 4, type: "movie", kind: "short", q: "《투 가이즈》 결말에서 삼합회 두목을 체포한 국가안전정보국 인물은?", answers: ["임차장", "손현주", "임"], explain: "임 차장(손현주). 반도체는 국정원으로, 두 사람은 포상금을 받는다." },
   { set: 4, no: 14, week: 3, type: "movie", kind: "short", q: "《단지 그대가 여자라는 이유만으로》의 실제 모델이 된 1988년 사건의 이름은?", answers: ["변월수사건", "변월수"], explain: "30대 가정주부가 강제로 입맞춤하려던 남성의 혀를 깨물어 절단한 사건." },
   { set: 4, no: 15, week: 2, type: "law", kind: "blank", q: "선고유예를 받은 뒤 특별한 사고 없이 ( )년이 지나면 면소된 것으로 본다.", answers: ["2", "2년", "이"], explain: "1년 이하의 징역·금고·자격정지·벌금에 해당하는 경미한 범죄가 대상." },
-  { set: 4, no: 16, week: 3, type: "law", kind: "blank", q: "미성년자의제강간죄는 ( )세 미만의 사람을 간음한 경우 동의와 관계없이 처벌한다.", answers: ["13", "13세", "십삼"], explain: "13세 미만은 동의능력이 없는 것으로 본다." },
+  { set: 4, no: 16, gichul: true, week: 3, type: "law", kind: "blank", q: "미성년자의제강간죄는 ( )세 미만의 사람을 간음한 경우 동의와 관계없이 처벌한다.", answers: ["13", "13세", "십삼"], explain: "13세 미만은 동의능력이 없는 것으로 본다." },
   { set: 4, no: 17, week: 6, type: "law", kind: "blank", q: "우리 민법상 성년은 만 ( )세다.", answers: ["19", "19세", "열아홉"], explain: "만 19세가 되지 않은 자가 미성년자." },
   { set: 4, no: 18, week: 6, type: "law", kind: "short", q: "민법상 제한능력자 4가지 중 행위능력 제한을 받지 않는 사람은?", answers: ["피특정후견인", "특정후견인", "피특정후견"], explain: "법정후견을 받는다는 공통점 때문에 함께 규정되었을 뿐, 행위능력은 제한되지 않는다." },
   { set: 4, no: 19, week: 7, type: "law", kind: "blank", q: "조정의 신청수수료는 소송사건의 ( )분의 1이다.", answers: ["5", "오"], explain: "보통 한 번 출석으로 끝나고, 비공개로 진행된다." },
@@ -597,7 +623,28 @@ const QUESTIONS = [
   { set: 5, no: 17, week: 3, type: "law", kind: "short", q: "야간 등 불안한 상황에서 공포·경악으로 정도를 넘은 과잉방위(형법 21조 3항)의 효과는?", answers: ["벌하지않는다", "필요적면제", "처벌하지않는다", "불벌", "벌하지않음", "처벌안함"], explain: "21조 2항은 임의적 감경·면제, 3항은 벌하지 않음(필요적 면제)." },
   { set: 5, no: 18, week: 3, type: "law", kind: "blank", q: "성범죄자 신상정보 고지는 여성가족부장관이 집행하며, 읍·면·동 게시판에 ( )일간 게시한다.", answers: ["30", "30일", "삼십"], explain: "관할 지역 아동·청소년 가구, 어린이집·학교 등에 우편으로도 보낸다." },
   { set: 5, no: 19, week: 6, type: "law", kind: "short", q: "의사무능력자가 한 의사표시의 효력은? (무효 / 취소 중 하나)", answers: ["무효"], explain: "의사무능력은 무효, 제한능력자의 행위는 취소할 수 있음. 둘을 구분할 것." },
-  { set: 5, no: 20, week: 7, type: "law", kind: "short", q: "1994년 맥도날드 커피 화상 사건의 배상 판결액은?", answers: ["290만달러", "290만불", "2900000달러", "290만", "이백구십만달러"], explain: "운전 중 뜨거운 커피를 엎질러 화상. 징벌적 손해배상의 대표 사례." }
+  { set: 5, no: 20, week: 7, type: "law", kind: "short", q: "1994년 맥도날드 커피 화상 사건의 배상 판결액은?", answers: ["290만달러", "290만불", "2900000달러", "290만", "이백구십만달러"], explain: "운전 중 뜨거운 커피를 엎질러 화상. 징벌적 손해배상의 대표 사례." },
+  // ── 기출 세트(6세트): 족보 키워드만 모음 ──
+  { set: 6, no: 1, week: 3, type: "law", kind: "blank", gichul: true, q: "유추적용금지의 예: 주거침입죄는 ( )년 이하의 징역 또는 500만 원 이하의 벌금에 처한다.", answers: ["3", "3년", "삼"], explain: "주거침입죄: 3년 이하 징역 또는 500만 원 이하 벌금." },
+  { set: 6, no: 2, week: 3, type: "law", kind: "blank", gichul: true, q: "유추적용금지의 예: 주거침입죄는 3년 이하의 징역 또는 ( )만 원 이하의 벌금에 처한다.", answers: ["500", "500만", "500만원", "오백"], explain: "창밖에서 들여다본 것을 주거침입으로 보는 것은 유추해석이라 금지." },
+  { set: 6, no: 3, week: 3, type: "law", kind: "blank", gichul: true, q: "범죄 후 법률이 바뀌어 그 행위가 범죄가 되지 않거나 형이 가벼워진 경우에는 ( )에 의한다.", answers: ["신법", "신"], explain: "소급효금지의 예외 — 피고인에게 유리한 소급은 허용(형법 1조 2항)." },
+  { set: 6, no: 4, week: 3, type: "law", kind: "short", gichul: true, q: "형벌법규의 실질적 내용이 정당하고 합리적이어야 한다는 죄형법정주의의 파생원칙은?", answers: ["적정성의원칙", "적정성", "적정성원칙"], explain: "형벌은 필요성과 보충성을 갖춘 최후의 수단이어야 한다." },
+  { set: 6, no: 5, week: 3, type: "law", kind: "short", gichul: true, q: "구성요건과 형사제재의 내용을 법문에 명확하게 규정해야 한다는 원칙은?", answers: ["명확성의원칙", "명확성", "명확성원칙"], explain: "법관의 자의적 남용을 막고 국민이 미리 예측할 수 있게 하려는 것." },
+  { set: 6, no: 6, week: 3, type: "law", kind: "blank", gichul: true, q: "형사미성년자·심신상실자·농아자·정당한 이유 있는 금지착오는 책임( )사유다.", answers: ["배제", "책임배제", "배제사유"], explain: "책임배제사유. 과잉방위·과잉피난·과잉자구행위·강요된 행위는 책임조각사유." },
+  { set: 6, no: 7, week: 3, type: "law", kind: "blank", gichul: true, q: "과잉방위·과잉피난·과잉자구행위·강요된 행위는 책임( )사유다.", answers: ["조각", "책임조각", "조각사유"], explain: "책임비난이 감소되어 형을 면제하거나 감경." },
+  { set: 6, no: 8, week: 3, type: "law", kind: "blank", gichul: true, q: "강간죄는 성기가 ( )되는 순간 기수가 되며, 완전한 삽입이나 사정, 성욕의 만족은 필요 없다.", answers: ["삽입"], explain: "실행의 착수는 폭행·협박을 개시한 때." },
+  { set: 6, no: 9, week: 3, type: "law", kind: "blank", gichul: true, q: "강간죄는 고소가 있어야 공소를 제기할 수 있는 친고죄였으나, 개정으로 ( )가 되었다.", answers: ["비친고죄", "비친고"], explain: "강제추행·준강간 등도 일괄 비친고죄로 바뀌었다." },
+  { set: 6, no: 10, week: 2, type: "movie", kind: "short", gichul: true, q: "《데드 맨 워킹》에서 사형수 매튜 폰슬렛 역을 맡은 배우는?", answers: ["숀펜", "seanpenn", "펜", "숀팬"], explain: "숀 펜. 《아이 엠 샘》의 샘 역도 숀 펜이다." },
+  { set: 6, no: 11, week: 2, type: "law", kind: "blank", gichul: true, q: "집행유예는 3년 이하의 징역 또는 금고를 선고할 때 1년에서 ( )년까지의 기간을 정해 붙인다.", answers: ["5", "5년", "오"], explain: "유예 기간이 지나면 처음부터 형 선고의 효력이 없어진다." },
+  { set: 6, no: 12, week: 2, type: "law", kind: "blank", gichul: true, q: "선고유예는 ( )년 이하의 징역이나 금고, 자격정지 또는 벌금의 형에 해당하는 경미한 범죄자가 대상이다.", answers: ["1", "1년", "일"], explain: "특별한 사고 없이 2년이 지나면 면소된 것으로 본다." },
+  { set: 6, no: 13, week: 6, type: "movie", kind: "short", gichul: true, q: "《아이 엠 샘》의 여자 주인공 리타 해리슨의 직업은?", answers: ["변호사"], explain: "샘의 양육권 소송을 무료(프로보노)로 맡았다." },
+  { set: 6, no: 14, week: 6, type: "law", kind: "short", gichul: true, q: "민법상 사람이 권리능력을 가지게 되는 시기는?", answers: ["출생한때", "출생", "출생시", "태어난때", "출생한시점"], explain: "민법 3조. 출생신고는 보고적 신고일 뿐이다." },
+  { set: 6, no: 15, week: 6, type: "law", kind: "short", gichul: true, q: "자신의 행위의 의미나 결과를 합리적으로 판단할 수 있는 정신적 능력을 무엇이라 하나?", answers: ["의사능력"], explain: "대법원 2002.10.11. 2001다10113. 의사무능력자의 의사표시는 무효." },
+  { set: 6, no: 16, week: 6, type: "law", kind: "short", gichul: true, q: "미성년자의 법정대리인이 가진 권한 3가지(동의권·대리권·○○권) 중, 동의 없이 한 행위를 없던 일로 돌리는 권한은?", answers: ["취소권", "취소"], explain: "동의권·대리권·취소권." },
+  { set: 6, no: 17, week: 4, type: "movie", kind: "short", gichul: true, q: "《투 가이즈》에서 카드 외판원(이혁재)이 다니는 카드회사의 이름은?", answers: ["알지카드", "알지", "rg카드"], explain: "족보에 '카드직원 회사이름'으로 나온 키워드." },
+  { set: 6, no: 18, week: 4, type: "movie", kind: "short", gichul: true, q: "《투 가이즈》 결말에서 삼합회 두목을 체포한 임 차장의 소속 기관은?", answers: ["국가안전정보국"], explain: "반도체는 국정원으로 넘어가고 두 사람은 포상금을 받는다." },
+  { set: 6, no: 19, week: 4, type: "movie", kind: "short", gichul: true, q: "《투 가이즈》에서 훈이 반도체 값으로 처음 요구한 금액(원)은? (두목은 이걸 달러로 바꿔 200만 달러를 준비)", answers: ["20억", "20억원", "이십억"], explain: "족보 키워드: 10억-1억, 20억, 200만 달러." },
+  { set: 6, no: 20, week: 7, type: "law", kind: "short", gichul: true, q: "가해자를 응징하고 억제하려고 실제 손해보다 많은 배상을 명하는 제도는?", answers: ["징벌적손해배상", "징벌적손해배상제도", "punitivedamages", "징벌적배상"], explain: "고의적 불법행위·제조물책임·명예훼손·음주운전 등. 우리 판례는 대륙법계에 맞지 않는다고 본다." }
 ];
 
 /* 줄거리: 영화별 기본 정보 · 등장인물 · 장면 순서 · 실화 차이 · 수업 포인트 */
@@ -700,11 +747,15 @@ const view = $("#view");
 
 const ui = {
   tab: "home",
-  cards: { kind: "all", week: "all", unknownOnly: false, list: false, order: null, i: 0, flipped: false },
+  cards: { kind: "all", week: "all", unknownOnly: false, gichulOnly: false, list: false, order: null, i: 0, flipped: false },
   story: 2,
   exam: { set: 1, res: {}, retry: false, sec: 1800, running: false, timer: null }
 };
 
+const SET_IDS = [...new Set(QUESTIONS.map(q => q.set))].sort((a, b) => a - b);
+const SET_NAMES = { 6: "기출" };
+function setName(n) { return SET_NAMES[n] || n + "세트"; }
+function gichulTag(g) { return g ? '<span class="tag gichul">★ 기출</span>' : ""; }
 function weekLabel(w) { return w + "주차"; }
 function typeTag(t) { return t === "movie" ? '<span class="tag movie">영화</span>' : '<span class="tag law">법·프린트</span>'; }
 function warnTag(u) { return u ? '<span class="tag warn">⚠ 확인 필요</span>' : ""; }
@@ -730,17 +781,31 @@ function renderHome() {
     const pct = cs.length ? Math.round(k / cs.length * 100) : 0;
     return `<div class="wkrow"><b>${w}주차</b><div class="t"><div>${esc(WEEKS[w].title)}</div><div class="bar"><i style="width:${pct}%"></i></div></div><span class="num">${k}/${cs.length}</span></div>`;
   }).join("");
-  const sets = [1, 2, 3, 4, 5].map(n => {
+  const sets = SET_IDS.map(n => {
     const b = S.best[n];
     const cnt = QUESTIONS.filter(q => q.set === n).length;
-    return `<button class="stat" data-set="${n}" style="cursor:pointer;font:inherit;color:inherit"><div class="k">${n}세트</div><div class="v">${b == null ? "–" : b}</div><div class="k">/${cnt}</div></button>`;
+    return `<button class="stat" data-set="${n}" style="cursor:pointer;font:inherit;color:inherit"><div class="k">${setName(n)}</div><div class="v">${b == null ? "–" : b}</div><div class="k">/${cnt}</div></button>`;
   }).join("");
+  const gTotal = CARDS.filter(c => c.gichul).length;
+  const gKnown = CARDS.filter(c => c.gichul && S.known[cardId(c)] === true).length;
   view.innerHTML = `
     <h2>오늘의 진도</h2>
     <div class="stats">
       <div class="stat"><div class="v">${known}</div><div class="k">외운 카드 / ${total}</div></div>
       <div class="stat"><div class="v">${Math.round(known / total * 100)}%</div><div class="k">전체 진도</div></div>
       <button class="stat" id="goWrong" style="cursor:pointer;font:inherit;color:inherit;text-align:left"><div class="v">${wrongN}</div><div class="k">틀린 문제 →</div></button>
+    </div>
+    <h2>족보로 본 시험 형식</h2>
+    <div class="panel">
+      <ul class="tips">
+        <li>약 40문항, 전부 주관식(빈칸·단답) + O/X, 더미 문제(교수님 성함, 강의 소감 등)도 섞여 나옴</li>
+        <li>강의자료의 중요한 문장 하나에 빈칸 2~3개. <b>기간 · 벌금 액수 · 몇 분의 몇</b> 위주</li>
+        <li>영화 문제는 간단한 내용 위주. 나무위키 줄거리 한 번 정독하면 대부분 풀 수 있다고 함</li>
+      </ul>
+      <div class="row" style="margin-top:12px">
+        <button class="btn primary" id="goGichul">★ 기출 카드 ${gKnown}/${gTotal}</button>
+        <button class="btn" id="goGichulSet">기출 세트 풀기</button>
+      </div>
     </div>
     <h2>주차별 단어장</h2>
     <div class="panel weeks">${weeks}</div>
@@ -750,18 +815,21 @@ function renderHome() {
     <h2>시험 범위</h2>
     <div class="panel"><ul class="plain">${Object.keys(WEEKS).map(w => `<li><b>${w}주차</b> 《${esc(WEEKS[w].title)}》(${WEEKS[w].year}) — ${[2, 3, 6, 7].includes(+w) ? "영화 + 강의자료" : "영화만"}</li>`).join("")}</ul></div>`;
   $("#goWrong").onclick = () => { ui.cards.kind = "wrong"; ui.cards.i = 0; ui.cards.order = null; go("cards"); };
+  $("#goGichul").onclick = () => { Object.assign(ui.cards, { kind: "all", week: "all", gichulOnly: true, i: 0, order: null, flipped: false }); go("cards"); };
+  $("#goGichulSet").onclick = () => { ui.exam.set = 6; ui.exam.res = {}; ui.exam.retry = false; go("exam"); };
   view.querySelectorAll("[data-set]").forEach(b => b.onclick = () => { ui.exam.set = +b.dataset.set; ui.exam.res = {}; ui.exam.retry = false; go("exam"); });
 }
 
 /* ---------- 단어장 ---------- */
 function wrongCards() {
-  return QUESTIONS.filter(q => S.wrong[qId(q)]).map(q => ({ week: q.week, type: q.type, term: q.q, answer: q.answers[0], point: q.explain, uncertain: q.uncertain, _q: qId(q) }));
+  return QUESTIONS.filter(q => S.wrong[qId(q)]).map(q => ({ week: q.week, type: q.type, term: q.q, answer: q.answers[0], point: q.explain, uncertain: q.uncertain, gichul: q.gichul, _q: qId(q) }));
 }
 function cardPool() {
   const c = ui.cards;
   let pool = c.kind === "wrong" ? wrongCards() : CARDS.filter(x => c.kind === "all" || x.type === c.kind);
   if (c.week !== "all") pool = pool.filter(x => x.week == c.week);
   if (c.unknownOnly && c.kind !== "wrong") pool = pool.filter(x => S.known[cardId(x)] !== true);
+  if (c.gichulOnly) pool = pool.filter(x => x.gichul);
   if (c.order) {
     const rank = new Map(c.order.map((id, i) => [id, i]));
     pool = pool.slice().sort((a, b) => (rank.get(keyOf(a)) ?? 1e9) - (rank.get(keyOf(b)) ?? 1e9));
@@ -785,7 +853,7 @@ function renderCards() {
   } else if (c.list) {
     body = `<div class="list">${pool.map(x => {
       const st = x._q ? "" : S.known[cardId(x)] === true ? '<span class="chip k">알아요</span>' : S.known[cardId(x)] === false ? '<span class="chip u">몰라요</span>' : "";
-      return `<div class="li"><div class="cardmeta"><span class="tag wk">${weekLabel(x.week)}</span>${typeTag(x.type)}${warnTag(x.uncertain)}${st}</div><div class="q">${esc(x.term)}</div><div class="a">${esc(x.answer)}</div>${x.point ? `<div class="p">${esc(x.point)}</div>` : ""}</div>`;
+      return `<div class="li"><div class="cardmeta"><span class="tag wk">${weekLabel(x.week)}</span>${typeTag(x.type)}${gichulTag(x.gichul)}${warnTag(x.uncertain)}${st}</div><div class="q">${esc(x.term)}</div><div class="a">${esc(x.answer)}</div>${x.point ? `<div class="p">${esc(x.point)}</div>` : ""}</div>`;
     }).join("")}</div>`;
   } else {
     const x = pool[c.i];
@@ -793,7 +861,7 @@ function renderCards() {
       ? `<div class="side">답</div><div class="front" style="font-size:1rem">${esc(x.term)}</div><div class="ans">${esc(x.answer)}</div>${x.point ? `<div class="pt">${esc(x.point)}</div>` : ""}`
       : `<div class="side">질문 · 탭해서 뒤집기</div><div class="front">${esc(x.term)}</div>${x.hint ? `<div class="pt">힌트: ${esc(x.hint)}</div>` : ""}`;
     body = `
-      <div class="cardmeta"><span class="tag wk">${weekLabel(x.week)} · ${esc(WEEKS[x.week].title)}</span>${typeTag(x.type)}${warnTag(x.uncertain)}</div>
+      <div class="cardmeta"><span class="tag wk">${weekLabel(x.week)} · ${esc(WEEKS[x.week].title)}</span>${typeTag(x.type)}${gichulTag(x.gichul)}${warnTag(x.uncertain)}</div>
       <button class="flip ${c.flipped ? "back" : ""}" id="flip" aria-label="카드 뒤집기">${face}</button>
       <div class="judge"><button class="btn no" id="no">몰라요</button><button class="btn yes" id="yes">${x._q ? "이제 알아요 (목록에서 빼기)" : "알아요"}</button></div>
       <div class="pager"><button class="btn" id="prev">← 이전</button><span class="num">${c.i + 1} / ${pool.length}</span><button class="btn" id="next">다음 →</button></div>`;
@@ -803,6 +871,7 @@ function renderCards() {
     <div class="row"><div class="seg">${seg}</div></div>
     <div class="row" style="margin-top:8px">
       <select class="sel" id="wk" aria-label="주차 선택">${opts}</select>
+      <button class="btn ${c.gichulOnly ? "on" : ""}" id="gich">★ 기출만</button>
       <button class="btn ${c.unknownOnly ? "on" : ""}" id="unk">모르는 것만</button>
       <button class="btn ${c.order ? "on" : ""}" id="shuf">섞기</button>
       <button class="btn ${c.list ? "on" : ""}" id="lst">목록 보기</button>
@@ -812,6 +881,7 @@ function renderCards() {
   view.querySelectorAll("[data-kind]").forEach(b => b.onclick = () => { c.kind = b.dataset.kind; c.i = 0; c.flipped = false; renderCards(); });
   $("#wk").onchange = e => { c.week = e.target.value; c.i = 0; c.flipped = false; renderCards(); };
   $("#unk").onclick = () => { c.unknownOnly = !c.unknownOnly; c.i = 0; c.flipped = false; renderCards(); };
+  $("#gich").onclick = () => { c.gichulOnly = !c.gichulOnly; c.i = 0; c.flipped = false; renderCards(); };
   $("#shuf").onclick = () => {
     if (c.order) c.order = null;
     else { const ids = cardPool().map(keyOf); for (let i = ids.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [ids[i], ids[j]] = [ids[j], ids[i]]; } c.order = ids; }
@@ -884,14 +954,14 @@ function renderExam() {
   let qs = QUESTIONS.filter(q => q.set === e.set).sort((a, b) => a.no - b.no);
   const all = qs;
   if (e.retry) qs = qs.filter(q => !(e.res[qId(q)] && e.res[qId(q)].ok));
-  const setBtns = [1, 2, 3, 4, 5].map(n => `<button aria-pressed="${n === e.set}" data-s="${n}">${n}세트</button>`).join("");
+  const setBtns = SET_IDS.map(n => `<button aria-pressed="${n === e.set}" data-s="${n}">${n === 6 ? "★ 기출" : n + "세트"}</button>`).join("");
   const done = all.filter(q => e.res[qId(q)]).length;
   const correct = all.filter(q => e.res[qId(q)] && e.res[qId(q)].ok).length;
   const mv = all.filter(q => q.type === "movie").length;
   view.innerHTML = `
     <h2>모의고사</h2>
     <div class="seg" style="max-width:100%">${setBtns}</div>
-    <p class="small muted" style="margin:8px 0 12px">${all.length}문항 · 영화 ${mv} / 법 ${all.length - mv} · 빈칸·단답형. 답을 쓰고 Enter 또는 '확인'. '정답 보기'는 틀린 것으로 기록돼요.</p>
+    <p class="small muted" style="margin:8px 0 12px">${e.set === 6 ? "선배 족보에 나온 키워드만 모은 세트예요. 1–5세트와 겹치지 않아요. " : ""}${all.length}문항 · 영화 ${mv} / 법 ${all.length - mv} · 빈칸·단답형. 답을 쓰고 Enter 또는 '확인'. '정답 보기'는 틀린 것으로 기록돼요.</p>
     <div class="timer">
       <span class="clock ${e.sec <= 720 ? "late" : ""}" id="clock" aria-live="off">${fmt(e.sec)}</span>
       <div class="row">
@@ -932,7 +1002,7 @@ function qHtml(q) {
       : `<div class="fb bad"><b class="w">${r.revealed ? "정답 확인" : "오답"}</b>${r.input && !r.revealed ? ` (내 답: ${esc(r.input)})` : ""} · 정답: <b>${esc(q.answers[0])}</b><div class="small">${esc(q.explain)}</div></div>`;
   }
   return `<div class="qcard ${r ? (r.ok ? "ok" : "bad") : ""}" id="c-${id}">
-    <div class="qhead"><span class="qno">${String(q.no).padStart(2, "0")}</span><span class="tag wk">${weekLabel(q.week)}</span>${typeTag(q.type)}<span class="tag wk">${kindLabel}</span>${warnTag(q.uncertain)}</div>
+    <div class="qhead"><span class="qno">${String(q.no).padStart(2, "0")}</span><span class="tag wk">${weekLabel(q.week)}</span>${typeTag(q.type)}<span class="tag wk">${kindLabel}</span>${gichulTag(q.gichul)}${warnTag(q.uncertain)}</div>
     <div class="qtext">${esc(q.q)}</div>
     ${r ? "" : `<form class="ansrow" data-q="${id}"><input id="in-${id}" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="${q.kind === "blank" ? "빈칸에 들어갈 말" : "답 입력"}" aria-label="${q.no}번 답"><button class="btn primary" type="submit">확인</button><button class="btn" type="button" data-reveal="${id}">정답 보기</button></form>`}
     ${fb}
